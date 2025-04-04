@@ -30,6 +30,7 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior.Companion.PopUntilContentChange
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
@@ -110,10 +111,13 @@ fun CenterAlignedTopAppBarExample() {
 fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scope = rememberCoroutineScope()
+    val paneExpansionState = rememberPaneExpansionState()
+    paneExpansionState.setFirstPaneWidth(100)
 
     NavigableListDetailPaneScaffold(
         modifier = Modifier.padding(paddingValues),
         navigator = scaffoldNavigator,
+        paneExpansionState = paneExpansionState,
         listPane = {
             AnimatedPane() {
                 MyList(
