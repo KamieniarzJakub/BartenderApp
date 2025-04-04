@@ -48,15 +48,6 @@ import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
-import android.content.res.Configuration
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.ui.platform.LocalConfiguration
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -159,36 +150,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaf
 fun MyList(
     onItemClick: (MyItem) -> Unit,
 ) {
-    val configuration = LocalConfiguration.current
-    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    val isTablet = configuration.screenWidthDp > 600  // Sprawdzenie, czy to tablet
-
-    if (isTablet && isPortrait) {
-        // Na tablecie w pionie -> 2 kolumny
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(drinks) { drink ->
-                Card(
-                    modifier = Modifier
-                        .background(Color.Magenta)
-                        .clickable {
-                            onItemClick(MyItem(drinks.indexOf(drink), drink.name, drink.ingredients, drink.recipe))
-                        }
-                ) {
-                    ListItem(
-                        headlineContent = {
-                            Text(text = drink.name)
-                        },
-                    )
-                }
-            }
-        }
-    } else {
-        // Na telefonie lub w trybie poziomym -> 1 kolumna
+    Card {
         LazyColumn {
             items(drinks) { drink ->
                 ListItem(
@@ -205,7 +167,6 @@ fun MyList(
         }
     }
 }
-
 
 @Composable
 fun MyDetails(item: MyItem) {
