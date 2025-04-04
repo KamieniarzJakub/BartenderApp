@@ -30,7 +30,9 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -41,7 +43,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 
@@ -58,11 +62,12 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun CenterAlignedTopAppBarExample() {
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -81,7 +86,11 @@ fun CenterAlignedTopAppBarExample() {
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { /* do something */ }) {
+                    IconButton(onClick = {
+                        scope.launch {
+                            scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Localized description"
@@ -101,14 +110,13 @@ fun CenterAlignedTopAppBarExample() {
         },
     ) {
             innerPadding ->
-        SampleNavigableListDetailPaneScaffoldFull(innerPadding)
+        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator)
     }
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues) {
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
+fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>) {
     val scope = rememberCoroutineScope()
 
     NavigableListDetailPaneScaffold(

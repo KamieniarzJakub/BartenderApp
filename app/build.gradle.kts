@@ -52,6 +52,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-unit")
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,7 +64,4 @@ dependencies {
     implementation("androidx.compose.material3.adaptive:adaptive:1.1.0")
     implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0")
     implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0")
-    implementation("androidx.compose.material3.adaptive:adaptive")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout")
-    implementation("androidx.compose.material3.adaptive:adaptive-navigation")
 }
