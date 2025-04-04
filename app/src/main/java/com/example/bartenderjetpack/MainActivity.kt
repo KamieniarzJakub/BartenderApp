@@ -30,6 +30,7 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior.Companion.PopUntilContentChange
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.rememberTopAppBarState
@@ -66,7 +67,6 @@ fun CenterAlignedTopAppBarExample() {
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -115,7 +115,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues) {
         modifier = Modifier.padding(paddingValues),
         navigator = scaffoldNavigator,
         listPane = {
-            AnimatedPane {
+            AnimatedPane() {
                 MyList(
                     onItemClick = { item ->
                         scope.launch {
