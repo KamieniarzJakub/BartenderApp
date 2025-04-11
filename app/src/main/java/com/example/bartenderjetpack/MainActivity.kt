@@ -49,6 +49,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -163,6 +165,7 @@ fun TimerFragment() {
 
     val coroutineScope = rememberCoroutineScope()
 
+    // uruchamianie minutnika
     LaunchedEffect(isRunning) {
         if (isRunning) {
             while (isRunning && timeLeft > 0) {
@@ -173,18 +176,44 @@ fun TimerFragment() {
         }
     }
 
+    // główny widok z przewijaniem w pionie
     Column(
         modifier = Modifier
-            .padding(top = 16.dp)
-            .fillMaxSize(),
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
         Text(
             text = "Minutnik: ${timeLeft}s",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Row(modifier = Modifier.padding(8.dp)) {
+        // Suwak ustawiania czasu (blokowany jeśli minutnik działa)
+        Slider(
+            value = totalTime.toFloat(),
+            onValueChange = {
+                if (!isRunning) {
+                    totalTime = it.toInt()
+                    timeLeft = totalTime
+                }
+            },
+            valueRange = 1f..300f,
+            steps = 29,
+            enabled = !isRunning,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        )
+
+        Text("Ustaw czas: ${totalTime}s", modifier = Modifier.padding(8.dp))
+
+        // Przycisk Start / Stop / Reset
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             IconButton(onClick = { isRunning = true }) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Start")
             }
@@ -196,25 +225,11 @@ fun TimerFragment() {
                 timeLeft = totalTime
             }) {
                 Icon(Icons.Default.Refresh, contentDescription = "Przerwij")
-
             }
         }
-
-        // Suwak ustawiający czas
-        Slider(
-            value = totalTime.toFloat(),
-            onValueChange = {
-                totalTime = it.toInt()
-                timeLeft = totalTime
-            },
-            valueRange = 10f..300f,
-            steps = 29,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
-        Text("Ustaw czas: ${totalTime}s", modifier = Modifier.padding(8.dp))
     }
 }
+
 
 
 @Composable
@@ -248,13 +263,15 @@ fun MyList(
 
 @Composable
 fun MyDetails(item: MyItem) {
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column( modifier = Modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(16.dp)) {
         Text(
             text = "${item.name}\n\nSkładniki:\n${item.ingredients}\n\nSposób przygotowania:\n${item.recipe}",
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Fragment dynamiczny: Minutnik
         TimerFragment()
     }
 }
