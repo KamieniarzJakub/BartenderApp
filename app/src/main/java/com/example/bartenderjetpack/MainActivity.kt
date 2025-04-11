@@ -1,11 +1,12 @@
 package com.example.bartenderjetpack
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Parcelable
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
@@ -38,14 +38,10 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import androidx.compose.foundation.layout.*
@@ -53,11 +49,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.*
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.platform.LocalContext
 
 
 class MainActivity : ComponentActivity() {
@@ -79,6 +75,8 @@ fun CenterAlignedTopAppBarExample() {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current;
+    var selectedCategory by remember { mutableStateOf<DrinkCategory?>(null) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -99,7 +97,17 @@ fun CenterAlignedTopAppBarExample() {
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch {
-                            scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
+                            if (scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.List){
+                                if (selectedCategory == null){
+                                    scaffoldNavigator.navigateBack();
+                                } else {
+                                    selectedCategory = null;
+                                }
+                            } else if (scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) {
+                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
+                            } else {
+                                Toast.makeText(context, "Unknown", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }) {
                         Icon(
@@ -121,7 +129,7 @@ fun CenterAlignedTopAppBarExample() {
         },
     ) {
             innerPadding ->
-        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator)
+        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator,selectedCategory,{ category -> selectedCategory = category})
     }
 }
 
@@ -129,10 +137,11 @@ fun CenterAlignedTopAppBarExample() {
 @Composable
 fun SampleNavigableListDetailPaneScaffoldFull(
     paddingValues: PaddingValues,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>
+    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
+    selectedCategory: DrinkCategory?,
+    changeCategory: (DrinkCategory) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var selectedCategory by remember { mutableStateOf<DrinkCategory?>(null) }
 
     NavigableListDetailPaneScaffold(
         modifier = Modifier.padding(paddingValues),
@@ -141,10 +150,10 @@ fun SampleNavigableListDetailPaneScaffoldFull(
             AnimatedPane {
                 if (selectedCategory == null) {
                     CategoryCards { category ->
-                        selectedCategory = category
+                        changeCategory(category)
                     }
                 } else {
-                    CategoryDetailView(category = selectedCategory!!) { item ->
+                    CategoryDetailView(category = selectedCategory) { item ->
                         scope.launch {
                             scaffoldNavigator.navigateTo(
                                 ListDetailPaneScaffoldRole.Detail,
