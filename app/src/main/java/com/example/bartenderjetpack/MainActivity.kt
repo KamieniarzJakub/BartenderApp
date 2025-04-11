@@ -8,8 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,11 +25,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldPredictiveBackHandler
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.rememberTopAppBarState
@@ -41,11 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 
@@ -71,7 +70,6 @@ fun CenterAlignedTopAppBarExample() {
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -114,14 +112,36 @@ fun CenterAlignedTopAppBarExample() {
     }
 }
 
+fun customPaneScaffoldDirective(currentWindowAdaptiveInfo: WindowAdaptiveInfo): PaneScaffoldDirective {
+    val horizontalPartitions = when(currentWindowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
+        WindowWidthSizeClass.EXPANDED -> 2
+        else -> 1
+    }
+
+    return PaneScaffoldDirective(
+        maxHorizontalPartitions = horizontalPartitions,
+        horizontalPartitionSpacerSize = 16.dp,
+        maxVerticalPartitions = 1,
+        verticalPartitionSpacerSize = 8.dp,
+        defaultPanePreferredWidth = 320.dp,
+        excludedBounds = emptyList()
+    )
+}
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>) {
     val scope = rememberCoroutineScope()
+    val customScaffoldDirective = customPaneScaffoldDirective(currentWindowAdaptiveInfo())
 
-    NavigableListDetailPaneScaffold(
-        modifier = Modifier.padding(paddingValues),
+    ThreePaneScaffoldPredictiveBackHandler(
         navigator = scaffoldNavigator,
+        backBehavior = BackNavigationBehavior.PopLatest
+    )
+
+    ListDetailPaneScaffold(
+        directive = customScaffoldDirective,
+        scaffoldState = scaffoldNavigator.scaffoldState,
         listPane = {
             AnimatedPane {
                 MyList(
@@ -143,6 +163,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaf
                 }
             }
         },
+        modifier = Modifier.padding(paddingValues),
     )
 }
 
@@ -157,7 +178,14 @@ fun MyList(
                     modifier = Modifier
                         .background(Color.Magenta)
                         .clickable {
-                            onItemClick(MyItem(drinks.indexOf(drink), drink.name, drink.ingredients, drink.recipe))
+                            onItemClick(
+                                MyItem(
+                                    drinks.indexOf(drink),
+                                    drink.name,
+                                    drink.ingredients,
+                                    drink.recipe
+                                )
+                            )
                         },
                     headlineContent = {
                         Text(text = drink.name)
