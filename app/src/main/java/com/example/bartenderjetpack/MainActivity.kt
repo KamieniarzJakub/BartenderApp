@@ -48,6 +48,15 @@ import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.*
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.PlayArrow
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,6 +156,68 @@ fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaf
 }
 
 @Composable
+fun TimerFragment() {
+    var totalTime by rememberSaveable { mutableStateOf(60) } // czas w sekundach
+    var timeLeft by rememberSaveable { mutableStateOf(totalTime) }
+    var isRunning by rememberSaveable { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(isRunning) {
+        if (isRunning) {
+            while (isRunning && timeLeft > 0) {
+                delay(1000)
+                timeLeft--
+            }
+            isRunning = false
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(top = 16.dp)
+            .fillMaxSize(),
+    ) {
+        Text(
+            text = "Minutnik: ${timeLeft}s",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(8.dp)
+        )
+
+        Row(modifier = Modifier.padding(8.dp)) {
+            IconButton(onClick = { isRunning = true }) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Start")
+            }
+            IconButton(onClick = { isRunning = false }) {
+                Icon(Icons.Default.Clear, contentDescription = "Stop")
+            }
+            IconButton(onClick = {
+                isRunning = false
+                timeLeft = totalTime
+            }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Przerwij")
+
+            }
+        }
+
+        // Suwak ustawiający czas
+        Slider(
+            value = totalTime.toFloat(),
+            onValueChange = {
+                totalTime = it.toInt()
+                timeLeft = totalTime
+            },
+            valueRange = 10f..300f,
+            steps = 29,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Text("Ustaw czas: ${totalTime}s", modifier = Modifier.padding(8.dp))
+    }
+}
+
+
+@Composable
 fun MyList(
     onItemClick: (MyItem) -> Unit,
 ) {
@@ -157,7 +228,14 @@ fun MyList(
                     modifier = Modifier
                         .background(Color.Magenta)
                         .clickable {
-                            onItemClick(MyItem(drinks.indexOf(drink), drink.name, drink.ingredients, drink.recipe))
+                            onItemClick(
+                                MyItem(
+                                    drinks.indexOf(drink),
+                                    drink.name,
+                                    drink.ingredients,
+                                    drink.recipe
+                                )
+                            )
                         },
                     headlineContent = {
                         Text(text = drink.name)
@@ -170,11 +248,17 @@ fun MyList(
 
 @Composable
 fun MyDetails(item: MyItem) {
-    Text(
-        text = "${item.name}\n\nSkładniki:\n${item.ingredients}\n\nSposób przygotowania:\n${item.recipe}",
-        modifier = Modifier.padding(16.dp)
-    )
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = "${item.name}\n\nSkładniki:\n${item.ingredients}\n\nSposób przygotowania:\n${item.recipe}",
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // Fragment dynamiczny: Minutnik
+        TimerFragment()
+    }
 }
+
 
 @Parcelize
 class MyItem(val id: Int, val name: String, val ingredients: String, val recipe: String) : Parcelable
