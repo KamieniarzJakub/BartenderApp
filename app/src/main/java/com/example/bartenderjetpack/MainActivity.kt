@@ -1,17 +1,13 @@
 package com.example.bartenderjetpack
 
-import android.app.Activity
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,32 +25,27 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior.Companion.PopUntilContentChange
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldPredictiveBackHandler
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.ui.platform.LocalWindowInfo
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,17 +106,39 @@ fun CenterAlignedTopAppBarExample() {
     }
 }
 
+fun customPaneScaffoldDirective(currentWindowAdaptiveInfo: WindowAdaptiveInfo): PaneScaffoldDirective {
+    val horizontalPartitions = when(currentWindowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
+        WindowWidthSizeClass.EXPANDED -> 2
+        else -> 1
+    }
+
+    return PaneScaffoldDirective(
+        maxHorizontalPartitions = horizontalPartitions,
+        horizontalPartitionSpacerSize = 16.dp,
+        maxVerticalPartitions = 1,
+        verticalPartitionSpacerSize = 8.dp,
+        defaultPanePreferredWidth = 320.dp,
+        excludedBounds = emptyList()
+    )
+}
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scope = rememberCoroutineScope()
+    val customScaffoldDirective = customPaneScaffoldDirective(currentWindowAdaptiveInfo())
 
-    NavigableListDetailPaneScaffold(
-        modifier = Modifier.padding(paddingValues),
+    ThreePaneScaffoldPredictiveBackHandler(
         navigator = scaffoldNavigator,
+        backBehavior = BackNavigationBehavior.PopLatest
+    )
+
+    ListDetailPaneScaffold(
+        directive = customScaffoldDirective,
+        scaffoldState = scaffoldNavigator.scaffoldState,
         listPane = {
-            AnimatedPane() {
+            AnimatedPane {
                 MyList(
                     onItemClick = { item ->
                         scope.launch {
@@ -145,6 +158,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues) {
                 }
             }
         },
+        modifier = Modifier.padding(paddingValues),
     )
 }
 
