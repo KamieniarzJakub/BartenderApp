@@ -127,24 +127,32 @@ fun CenterAlignedTopAppBarExample() {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>) {
+fun SampleNavigableListDetailPaneScaffoldFull(
+    paddingValues: PaddingValues,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>
+) {
     val scope = rememberCoroutineScope()
+    var selectedCategory by remember { mutableStateOf<DrinkCategory?>(null) }
 
     NavigableListDetailPaneScaffold(
         modifier = Modifier.padding(paddingValues),
         navigator = scaffoldNavigator,
         listPane = {
             AnimatedPane {
-                MyList(
-                    onItemClick = { item ->
+                if (selectedCategory == null) {
+                    CategoryCards { category ->
+                        selectedCategory = category
+                    }
+                } else {
+                    CategoryDetailView(category = selectedCategory!!) { item ->
                         scope.launch {
                             scaffoldNavigator.navigateTo(
                                 ListDetailPaneScaffoldRole.Detail,
                                 item
                             )
                         }
-                    },
-                )
+                    }
+                }
             }
         },
         detailPane = {
@@ -153,9 +161,10 @@ fun SampleNavigableListDetailPaneScaffoldFull(paddingValues: PaddingValues, scaf
                     MyDetails(it)
                 }
             }
-        },
+        }
     )
 }
+
 
 @Composable
 fun TimerFragment() {
@@ -230,36 +239,64 @@ fun TimerFragment() {
     }
 }
 
+@Composable
+fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(category.drinks) { drink ->
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onDrinkClick(
+                            MyItem(
+                                id = drink.name.hashCode(),
+                                name = drink.name,
+                                ingredients = drink.ingredients,
+                                recipe = drink.recipe
+                            )
+                        )
+                    },
+                headlineContent = { Text(drink.name) },
+                supportingContent = { Text(drink.ingredients) }
+            )
+        }
+    }
+}
 
 
 @Composable
-fun MyList(
-    onItemClick: (MyItem) -> Unit,
-) {
-    Card {
-        LazyColumn {
-            items(drinks) { drink ->
-                ListItem(
-                    modifier = Modifier
-                        .background(Color.Magenta)
-                        .clickable {
-                            onItemClick(
-                                MyItem(
-                                    drinks.indexOf(drink),
-                                    drink.name,
-                                    drink.ingredients,
-                                    drink.recipe
-                                )
-                            )
-                        },
-                    headlineContent = {
-                        Text(text = drink.name)
-                    },
-                )
+fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(drinkCategories) { category ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onCategoryClick(category) },
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = category.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun MyDetails(item: MyItem) {
@@ -282,31 +319,53 @@ class MyItem(val id: Int, val name: String, val ingredients: String, val recipe:
 
 data class Drink(val name: String, val ingredients: String, val recipe: String)
 
-val drinks = listOf(
-    Drink("Woda", "Woda", "Wlać wodę do szklanki."),
-    Drink("Woda gazowana", "Woda mineralna, gaz", "Dodać do wody gaz, następnie wymieszać wszystko razem do uzyskania płynnej konsystencji."),
-    Drink("Sok pomarańczowy", "Pomarańcze, woda mineralna, cukier", "Wycisnąć pomarańcze za pomocą wyciskarki. Następnie przelać zawartość do szklanki i posłodzić. Uzupełnić brakującą przestrzeń w szklance wodą, następnie wymieszać, aby nikt się nie kapnął."),
-    Drink("Mleko", "Krowa", "Zmiksuj wszystkie składniki z lodem i podawaj w wysokiej szklance."),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-"),
-    Drink("Template", "-", "-")
+data class DrinkCategory(
+    val name: String,
+    val description: String,
+    val drinks: List<Drink>
+)
+
+val drinkCategories = listOf(
+    DrinkCategory(
+        name = "Główna",
+        description = "Witaj w aplikacji Bartender! Tutaj znajdziesz przepisy na różne napoje.",
+        drinks = emptyList()
+    ),
+    DrinkCategory(
+        name = "Bezalkoholowe",
+        description = "Koktajle bezalkoholowe dla każdego!",
+        drinks = listOf(
+            Drink("Woda", "Woda", "Wlać wodę do szklanki."),
+            Drink("Woda gazowana", "Woda mineralna, gaz", "Dodać do wody gaz, następnie wymieszać wszystko razem do uzyskania płynnej konsystencji."),
+            Drink("Sok pomarańczowy", "Pomarańcze, woda mineralna, cukier", "Wycisnąć pomarańcze za pomocą wyciskarki. Następnie przelać zawartość do szklanki i posłodzić. Uzupełnić brakującą przestrzeń w szklance wodą, następnie wymieszać, aby nikt się nie kapnął."),
+            Drink("Mleko", "Krowa", "Zmiksuj wszystkie składniki z lodem i podawaj w wysokiej szklance."),
+        )
+    ),
+    DrinkCategory(
+        name = "Template",
+        description = "Do uzupełnienia",
+        drinks = listOf(
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"),
+            Drink("Template", "-", "-"))
+    )
 )
