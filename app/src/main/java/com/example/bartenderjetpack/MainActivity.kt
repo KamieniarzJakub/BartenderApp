@@ -1,8 +1,13 @@
 package com.example.bartenderjetpack
 
+import android.Manifest
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Parcelable
+import android.telephony.SmsManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -58,6 +63,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 
 class MainActivity : ComponentActivity() {
@@ -334,39 +341,68 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
 
 @Composable
 fun MyDetails(item: MyItem) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.icon),
-            contentDescription = item.name,
-            modifier = Modifier.fillMaxWidth().height(200.dp)
-        )
-        Text(
-            text = item.name,
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-        )
+    val context = LocalContext.current
+    val activity = context as? Activity
 
-        Text(
-            text = "Składniki:\n${item.ingredients}",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+    val smsPermission = Manifest.permission.SEND_SMS
+    val hasPermission = ContextCompat.checkSelfPermission(context, smsPermission) == PackageManager.PERMISSION_GRANTED
 
-        Text(
-            text = "Sposób przygotowania:\n${item.recipe}",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                if (hasPermission) {
+                    sendSms(context, "000000000", "Składniki drinka ${item.name}: ${item.ingredients}")
+                } else {
+                    ActivityCompat.requestPermissions(activity!!, arrayOf(smsPermission), 1)
+                }
+            }) {
+                Icon(Icons.Default.Send, contentDescription = "Wyślij SMS")
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .padding(16.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon),
+                contentDescription = item.name,
+                modifier = Modifier.fillMaxWidth().height(200.dp)
+            )
+            Text(
+                text = item.name,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            Text(
+                text = "Składniki:\n${item.ingredients}",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Sposób przygotowania:\n${item.recipe}",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
-        TimerFragment()
+            TimerFragment()
+        }
     }
 }
 
+
+fun sendSms(context: Context, phoneNumber: String, message: String) {
+    try {
+        val smsManager: SmsManager = SmsManager.getDefault()
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+        Toast.makeText(context, "Wysłano SMS!", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Błąd wysyłania SMS: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
 
 
 @Parcelize
