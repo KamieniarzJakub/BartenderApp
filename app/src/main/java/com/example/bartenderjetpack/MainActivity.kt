@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +46,8 @@ import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -54,6 +57,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 
 
 class MainActivity : ComponentActivity() {
@@ -269,20 +273,31 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) 
                         )
                     },
                 headlineContent = { Text(drink.name) },
-                supportingContent = { Text(drink.ingredients) }
+                supportingContent = { Text(drink.ingredients) },
+                leadingContent = {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon),
+                        contentDescription = "Obrazek koktajlu",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             )
         }
     }
 }
 
 
+
 @Composable
 fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(drinkCategories) { category ->
+        items(drinkCategories.size) { index ->
+            val category = drinkCategories[index]
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -290,6 +305,14 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
                 elevation = CardDefaults.cardElevation(8.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon),
+                        contentDescription = category.name,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = category.name,
                         style = MaterialTheme.typography.headlineSmall
@@ -307,20 +330,43 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
 }
 
 
+
+
 @Composable
 fun MyDetails(item: MyItem) {
-    Column( modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(rememberScrollState())
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.icon),
+            contentDescription = item.name,
+            modifier = Modifier.fillMaxWidth().height(200.dp)
+        )
         Text(
-            text = "${item.name}\n\nSkładniki:\n${item.ingredients}\n\nSposób przygotowania:\n${item.recipe}",
+            text = item.name,
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+        )
+
+        Text(
+            text = "Składniki:\n${item.ingredients}",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Text(
+            text = "Sposób przygotowania:\n${item.recipe}",
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
         TimerFragment()
     }
 }
+
 
 
 @Parcelize
