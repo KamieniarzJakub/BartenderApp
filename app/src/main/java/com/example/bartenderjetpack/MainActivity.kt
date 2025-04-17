@@ -7,11 +7,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Parcelable
+import android.provider.ContactsContract
 import android.telephony.SmsManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
@@ -79,6 +82,32 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun getPhoneNumberFromUri(context: Context, contactUri: android.net.Uri): String? {
+    val contentResolver = context.contentResolver
+    val cursor = contentResolver.query(contactUri, null, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+            val hasPhoneNumber = it.getInt(it.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0
+
+            if (hasPhoneNumber) {
+                val phones = contentResolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    null,
+                    "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                    arrayOf(id),
+                    null
+                )
+                phones?.use { phoneCursor ->
+                    if (phoneCursor.moveToFirst()) {
+                        return phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                    }
+                }
+            }
+        }
+    }
+    return null
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -342,18 +371,49 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
 @Composable
 fun MyDetails(item: MyItem) {
     val context = LocalContext.current
-    val activity = context as? Activity
+
+    // Launcher do wyboru kontaktu
+    val contactLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            val phone = getPhoneNumberFromUri(context, uri)
+            if (phone != null) {
+                sendSms(context, phone, "Składniki drinka ${item.name}: ${item.ingredients}")
+            } else {
+                Toast.makeText(context, "Nie udało się pobrać numeru", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Launcher do żądania uprawnień
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            contactLauncher.launch(null)
+        } else {
+            Toast.makeText(context, "Potrzebne uprawnienia do SMS i kontaktów", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val smsPermission = Manifest.permission.SEND_SMS
-    val hasPermission = ContextCompat.checkSelfPermission(context, smsPermission) == PackageManager.PERMISSION_GRANTED
+    val contactPermission = Manifest.permission.READ_CONTACTS
+
+    val hasSmsPermission = ContextCompat.checkSelfPermission(context, smsPermission) == PackageManager.PERMISSION_GRANTED
+    val hasContactPermission = ContextCompat.checkSelfPermission(context, contactPermission) == PackageManager.PERMISSION_GRANTED
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                if (hasPermission) {
-                    sendSms(context, "000000000", "Składniki drinka ${item.name}: ${item.ingredients}")
+                if (hasSmsPermission && hasContactPermission) {
+                    contactLauncher.launch(null)
                 } else {
-                    ActivityCompat.requestPermissions(activity!!, arrayOf(smsPermission), 1)
+                    permissionLauncher.launch(arrayOf(
+                        smsPermission,
+                        contactPermission
+                    ))
                 }
             }) {
                 Icon(Icons.Default.Send, contentDescription = "Wyślij SMS")
@@ -370,7 +430,9 @@ fun MyDetails(item: MyItem) {
             Image(
                 painter = painterResource(id = R.drawable.icon),
                 contentDescription = item.name,
-                modifier = Modifier.fillMaxWidth().height(200.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
             )
             Text(
                 text = item.name,
@@ -392,6 +454,7 @@ fun MyDetails(item: MyItem) {
         }
     }
 }
+
 
 
 fun sendSms(context: Context, phoneNumber: String, message: String) {
