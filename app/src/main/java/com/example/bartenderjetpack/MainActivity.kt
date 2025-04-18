@@ -1,14 +1,17 @@
 package com.example.bartenderjetpack
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
 import android.provider.ContactsContract
 import android.telephony.SmsManager
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -71,6 +74,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 
 
@@ -80,28 +86,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BartenderJetpackTheme {
-                val backStack = remember { mutableStateListOf<MyItem>() }
-                val categoryBackStack = remember { mutableStateListOf<DrinkCategory>() }
-
-                // Pass them as parameters
-                CenterAlignedTopAppBarExample(
-                    backStack = backStack,
-                    categoryBackStack = categoryBackStack
-                )
+                val viewModel: MainViewModel = viewModel()
+                CenterAlignedTopAppBarExample(viewModel = viewModel)
             }
         }
     }
 }
 
-fun getPhoneNumberFromUri(context: Context, contactUri: android.net.Uri): String? {
+fun getPhoneNumberFromUri(context: Context, contactUri: Uri): String? {
     val contentResolver = context.contentResolver
     val cursor = contentResolver.query(contactUri, null, null, null, null)
     cursor?.use {
         if (it.moveToFirst()) {
             val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
-            val hasPhoneNumber = it.getInt(it.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0
-
-            if (hasPhoneNumber) {
+            val hasPhone = it.getInt(it.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0
+            if (hasPhone) {
                 val phones = contentResolver.query(
                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                     null,
@@ -120,21 +119,58 @@ fun getPhoneNumberFromUri(context: Context, contactUri: android.net.Uri): String
     return null
 }
 
+fun sendSms(context: Context, phoneNumber: String, message: String) {
+    try {
+        val smsManager = SmsManager.getDefault()
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+        Toast.makeText(context, "Wysłano SMS!", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Błąd wysyłania SMS: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
+
+
+class MainViewModel(
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _backStack = mutableStateListOf<MyItem>()
+    val backStack: List<MyItem> get() = _backStack
+
+    private val _categoryBackStack = mutableStateListOf<DrinkCategory>()
+    val categoryBackStack: List<DrinkCategory> get() = _categoryBackStack
+
+    private val _selectedCategory = mutableStateOf<DrinkCategory?>(null)
+    val selectedCategory: State<DrinkCategory?> get() = _selectedCategory
+
+    fun setSelectedCategory(category: DrinkCategory?) {
+        _selectedCategory.value = category
+    }
+
+    fun pushBack(item: MyItem) = _backStack.add(0, item)
+    fun popBack(): MyItem? = if (_backStack.isNotEmpty()) _backStack.removeAt(0) else null
+
+    fun pushCategoryBack(category: DrinkCategory) = _categoryBackStack.add(0, category)
+    fun popCategoryBack(): DrinkCategory? = if (_categoryBackStack.isNotEmpty()) _categoryBackStack.removeAt(0) else null
+
+    fun clearBackStacks() {
+        _backStack.clear()
+        _categoryBackStack.clear()
+    }
+}
+
+
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun CenterAlignedTopAppBarExample(
-    backStack: MutableList<MyItem>,
-    categoryBackStack: MutableList<DrinkCategory>
-) {
+fun CenterAlignedTopAppBarExample(viewModel: MainViewModel) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current;
-    var selectedCategory by remember { mutableStateOf<DrinkCategory?>(null) }
+    val selectedCategory by viewModel.selectedCategory
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -142,50 +178,49 @@ fun CenterAlignedTopAppBarExample(
                     titleContentColor = MaterialTheme.colorScheme.primary,
                 ),
                 title = {
-                    Text(
-                        "Centered Top App Bar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text("Centered Top App Bar", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 navigationIcon = {
-                    if(selectedCategory!=null) {
+                    if (selectedCategory != null) {
                         IconButton(onClick = {
                             scope.launch {
                                 handleBack(
                                     scaffoldNavigator,
                                     selectedCategory,
-                                    { selectedCategory = it },
-                                    backStack,
-                                    categoryBackStack,
+                                    { viewModel.setSelectedCategory(it) },
+                                    viewModel,
                                     scope
                                 )
                             }
                         }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
+                                contentDescription = "Wróć"
                             )
                         }
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
-                        )
+                    IconButton(onClick = { /* Placeholder */ }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
                     }
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
-    ) {
-            innerPadding ->
-        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator,selectedCategory,{ category -> selectedCategory = category}, backStack, categoryBackStack)
+    ) { innerPadding ->
+        SampleNavigableListDetailPaneScaffoldFull(
+            innerPadding,
+            scaffoldNavigator,
+            selectedCategory,
+            { viewModel.setSelectedCategory(it) },
+            viewModel
+        )
     }
 }
 
+
+@SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SampleNavigableListDetailPaneScaffoldFull(
@@ -193,22 +228,21 @@ fun SampleNavigableListDetailPaneScaffoldFull(
     scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
     selectedCategory: DrinkCategory?,
     changeCategory: (DrinkCategory?) -> Unit,
-    backStack: MutableList<MyItem>,
-    categoryBackStack: MutableList<DrinkCategory>
+    viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
 
+    val activity = (LocalContext.current as? Activity)
     BackHandler {
         val handled = handleBack(
             scaffoldNavigator,
             selectedCategory,
             changeCategory,
-            backStack,
-            categoryBackStack,
+            viewModel,
             scope
         )
         if (!handled) {
-            // domyślne zachowanie systemu
+            activity?.finish()
         }
     }
 
@@ -217,33 +251,25 @@ fun SampleNavigableListDetailPaneScaffoldFull(
             .fillMaxSize()
             .pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
                 detectHorizontalDragGestures(
-                    onDragEnd = {},
                     onHorizontalDrag = { _, dragAmount ->
+
                         if (dragAmount > 50) {
                             handleBack(
                                 scaffoldNavigator,
                                 selectedCategory,
                                 changeCategory,
-                                backStack,
-                                categoryBackStack,
+                                viewModel,
                                 scope
                             )
                         } else if (dragAmount < -50) {
-                            // Swipe w lewo - powrót
-                            when {
-                                categoryBackStack.isNotEmpty() -> {
-                                    val lastCategory = categoryBackStack.removeAt(0)
-                                    changeCategory.invoke(lastCategory)
-                                }
-
-                                backStack.isNotEmpty() -> {
-                                    val lastItem = backStack.removeAt(0)
-                                    scope.launch {
-                                        scaffoldNavigator.navigateTo(
-                                            ListDetailPaneScaffoldRole.Detail,
-                                            lastItem
-                                        )
-                                    }
+                            viewModel.popCategoryBack()?.let {
+                                changeCategory(it)
+                            } ?: viewModel.popBack()?.let {
+                                scope.launch {
+                                    scaffoldNavigator.navigateTo(
+                                        ListDetailPaneScaffoldRole.Detail,
+                                        it
+                                    )
                                 }
                             }
                         }
@@ -257,18 +283,15 @@ fun SampleNavigableListDetailPaneScaffoldFull(
             listPane = {
                 AnimatedPane {
                     if (selectedCategory == null) {
-                        CategoryCards { category ->
-                            categoryBackStack.clear()
-                            changeCategory(category)
+                        CategoryCards {
+                            viewModel.clearBackStacks()
+                            changeCategory(it)
                         }
                     } else {
-                        CategoryDetailView(category = selectedCategory) { item ->
-                            backStack.clear()
+                        CategoryDetailView(selectedCategory) { item ->
+                            viewModel.clearBackStacks()
                             scope.launch {
-                                scaffoldNavigator.navigateTo(
-                                    ListDetailPaneScaffoldRole.Detail,
-                                    item
-                                )
+                                scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
                             }
                         }
                     }
@@ -278,6 +301,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(
                 AnimatedPane {
                     scaffoldNavigator.currentDestination?.contentKey?.let {
                         MyDetails(it)
+                        if (viewModel.backStack.isEmpty()) viewModel.pushBack(it)
                     }
                 }
             }
@@ -285,20 +309,20 @@ fun SampleNavigableListDetailPaneScaffoldFull(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 fun handleBack(
     scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
     selectedCategory: DrinkCategory?,
     onCategoryChange: (DrinkCategory?) -> Unit,
-    backStack: MutableList<MyItem>,
-    categoryBackStack: MutableList<DrinkCategory>,
+    viewModel: MainViewModel,
     scope: CoroutineScope
 ): Boolean {
     return when {
         scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail -> {
-            scaffoldNavigator.currentDestination?.contentKey?.let { currentKey ->
-                backStack.add(0, currentKey)
-            }
+            val contentKey = scaffoldNavigator.currentDestination?.contentKey
+            contentKey?.let { viewModel.pushBack(it) }
+
             scope.launch {
                 scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
             }
@@ -306,25 +330,26 @@ fun handleBack(
         }
 
         selectedCategory != null -> {
-            categoryBackStack.add(0, selectedCategory)
-            onCategoryChange.invoke(null)
+            viewModel.pushCategoryBack(selectedCategory)
+            onCategoryChange(null)
             true
         }
 
-        else -> false
+        else -> {
+            false
+        }
     }
 }
 
 
-    @Composable
+
+@Composable
 fun TimerFragment() {
-    var totalTime by rememberSaveable { mutableStateOf(60) } // czas w sekundach
+    var totalTime by rememberSaveable { mutableStateOf(60) }
     var timeLeft by rememberSaveable { mutableStateOf(totalTime) }
     var isRunning by rememberSaveable { mutableStateOf(false) }
-
     val coroutineScope = rememberCoroutineScope()
 
-    // uruchamianie minutnika
     LaunchedEffect(isRunning) {
         if (isRunning) {
             while (isRunning && timeLeft > 0) {
@@ -335,19 +360,10 @@ fun TimerFragment() {
         }
     }
 
-    // główny widok z przewijaniem w pionie
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Minutnik: ${timeLeft}s",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        // Suwak ustawiania czasu (blokowany jeśli minutnik działa)
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+        Text("Minutnik: ${timeLeft}s", style = MaterialTheme.typography.headlineMedium)
         Slider(
             value = totalTime.toFloat(),
             onValueChange = {
@@ -363,31 +379,20 @@ fun TimerFragment() {
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
         )
-
-        Text("Ustaw czas: ${totalTime}s", modifier = Modifier.padding(8.dp))
-
-        // Przycisk Start / Stop / Reset
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            IconButton(onClick = { isRunning = true }) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Start")
-            }
-            IconButton(onClick = { isRunning = false }) {
-                Icon(Icons.Default.Clear, contentDescription = "Stop")
-            }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            IconButton(onClick = { isRunning = true }) { Icon(Icons.Default.PlayArrow, contentDescription = "Start") }
+            IconButton(onClick = { isRunning = false }) { Icon(Icons.Default.Clear, contentDescription = "Stop") }
             IconButton(onClick = {
                 isRunning = false
                 timeLeft = totalTime
-            }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Przerwij")
-            }
+            }) { Icon(Icons.Default.Refresh, contentDescription = "Reset") }
         }
     }
 }
+
+
+
+
 
 @Composable
 fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) {
@@ -450,16 +455,8 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
                             .height(100.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = category.name,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = category.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(category.name, style = MaterialTheme.typography.headlineSmall)
+                    Text(category.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -469,16 +466,16 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
 
 
 
+
 @Composable
 fun MyDetails(item: MyItem) {
     val context = LocalContext.current
 
-    // Launcher do wyboru kontaktu
     val contactLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickContact()
     ) { uri ->
         uri?.let {
-            val phone = getPhoneNumberFromUri(context, uri)
+            val phone = getPhoneNumberFromUri(context, it)
             if (phone != null) {
                 sendSms(context, phone, "Składniki drinka ${item.name}: ${item.ingredients}")
             } else {
@@ -487,23 +484,18 @@ fun MyDetails(item: MyItem) {
         }
     }
 
-    // Launcher do żądania uprawnień
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        if (allGranted) {
+        if (permissions.values.all { it }) {
             contactLauncher.launch(null)
         } else {
-            Toast.makeText(context, "Potrzebne uprawnienia do SMS i kontaktów", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Potrzebne uprawnienia", Toast.LENGTH_SHORT).show()
         }
     }
 
-    val smsPermission = Manifest.permission.SEND_SMS
-    val contactPermission = Manifest.permission.READ_CONTACTS
-
-    val hasSmsPermission = ContextCompat.checkSelfPermission(context, smsPermission) == PackageManager.PERMISSION_GRANTED
-    val hasContactPermission = ContextCompat.checkSelfPermission(context, contactPermission) == PackageManager.PERMISSION_GRANTED
+    val hasSmsPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+    val hasContactPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
 
     Scaffold(
         floatingActionButton = {
@@ -512,20 +504,20 @@ fun MyDetails(item: MyItem) {
                     contactLauncher.launch(null)
                 } else {
                     permissionLauncher.launch(arrayOf(
-                        smsPermission,
-                        contactPermission
+                        Manifest.permission.SEND_SMS,
+                        Manifest.permission.READ_CONTACTS
                     ))
                 }
             }) {
                 Icon(Icons.Default.Send, contentDescription = "Wyślij SMS")
             }
         }
-    ) { innerPadding ->
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
+                .padding(padding)
                 .padding(16.dp)
         ) {
             Image(
@@ -535,36 +527,11 @@ fun MyDetails(item: MyItem) {
                     .fillMaxWidth()
                     .height(200.dp)
             )
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-            )
-            Text(
-                text = "Składniki:\n${item.ingredients}",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = "Sposób przygotowania:\n${item.recipe}",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
+            Text(item.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+            Text("Składniki:\n${item.ingredients}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Sposób przygotowania:\n${item.recipe}", style = MaterialTheme.typography.bodyMedium)
             TimerFragment()
         }
-    }
-}
-
-
-
-fun sendSms(context: Context, phoneNumber: String, message: String) {
-    try {
-        val smsManager: SmsManager = SmsManager.getDefault()
-        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
-        Toast.makeText(context, "Wysłano SMS!", Toast.LENGTH_SHORT).show()
-    } catch (e: Exception) {
-        Toast.makeText(context, "Błąd wysyłania SMS: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 
