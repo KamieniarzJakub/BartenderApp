@@ -11,12 +11,14 @@ import android.provider.ContactsContract
 import android.telephony.SmsManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,10 +66,12 @@ import androidx.compose.material.icons.filled.*
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
 
 
 class MainActivity : ComponentActivity() {
@@ -76,7 +80,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BartenderJetpackTheme {
-                CenterAlignedTopAppBarExample()
+                val backStack = remember { mutableStateListOf<MyItem>() }
+                val categoryBackStack = remember { mutableStateListOf<DrinkCategory>() }
+
+                // Pass them as parameters
+                CenterAlignedTopAppBarExample(
+                    backStack = backStack,
+                    categoryBackStack = categoryBackStack
+                )
             }
         }
     }
@@ -111,7 +122,10 @@ fun getPhoneNumberFromUri(context: Context, contactUri: android.net.Uri): String
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun CenterAlignedTopAppBarExample() {
+fun CenterAlignedTopAppBarExample(
+    backStack: MutableList<MyItem>,
+    categoryBackStack: MutableList<DrinkCategory>
+) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scope = rememberCoroutineScope()
@@ -135,25 +149,24 @@ fun CenterAlignedTopAppBarExample() {
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            if (scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.List){
-                                if (selectedCategory == null){
-                                    scaffoldNavigator.navigateBack();
-                                } else {
-                                    selectedCategory = null;
-                                }
-                            } else if (scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) {
-                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
-                            } else {
-                                Toast.makeText(context, "Unknown", Toast.LENGTH_SHORT).show()
+                    if(selectedCategory!=null) {
+                        IconButton(onClick = {
+                            scope.launch {
+                                handleBack(
+                                    scaffoldNavigator,
+                                    selectedCategory,
+                                    { selectedCategory = it },
+                                    backStack,
+                                    categoryBackStack,
+                                    scope
+                                )
                             }
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Localized description"
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
-                        )
                     }
                 },
                 actions = {
@@ -169,7 +182,7 @@ fun CenterAlignedTopAppBarExample() {
         },
     ) {
             innerPadding ->
-        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator,selectedCategory,{ category -> selectedCategory = category})
+        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator,selectedCategory,{ category -> selectedCategory = category}, backStack, categoryBackStack)
     }
 }
 
@@ -179,43 +192,131 @@ fun SampleNavigableListDetailPaneScaffoldFull(
     paddingValues: PaddingValues,
     scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
     selectedCategory: DrinkCategory?,
-    changeCategory: (DrinkCategory) -> Unit
+    changeCategory: (DrinkCategory?) -> Unit,
+    backStack: MutableList<MyItem>,
+    categoryBackStack: MutableList<DrinkCategory>
 ) {
     val scope = rememberCoroutineScope()
 
-    NavigableListDetailPaneScaffold(
-        modifier = Modifier.padding(paddingValues),
-        navigator = scaffoldNavigator,
-        listPane = {
-            AnimatedPane {
-                if (selectedCategory == null) {
-                    CategoryCards { category ->
-                        changeCategory(category)
-                    }
-                } else {
-                    CategoryDetailView(category = selectedCategory) { item ->
-                        scope.launch {
-                            scaffoldNavigator.navigateTo(
-                                ListDetailPaneScaffoldRole.Detail,
-                                item
+    BackHandler {
+        val handled = handleBack(
+            scaffoldNavigator,
+            selectedCategory,
+            changeCategory,
+            backStack,
+            categoryBackStack,
+            scope
+        )
+        if (!handled) {
+            // domyślne zachowanie systemu
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {},
+                    onHorizontalDrag = { _, dragAmount ->
+                        if (dragAmount > 50) {
+                            handleBack(
+                                scaffoldNavigator,
+                                selectedCategory,
+                                changeCategory,
+                                backStack,
+                                categoryBackStack,
+                                scope
                             )
+                        } else if (dragAmount < -50) {
+                            // Swipe w lewo - powrót
+                            when {
+                                categoryBackStack.isNotEmpty() -> {
+                                    val lastCategory = categoryBackStack.removeAt(0)
+                                    changeCategory.invoke(lastCategory)
+                                }
+
+                                backStack.isNotEmpty() -> {
+                                    val lastItem = backStack.removeAt(0)
+                                    scope.launch {
+                                        scaffoldNavigator.navigateTo(
+                                            ListDetailPaneScaffoldRole.Detail,
+                                            lastItem
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+    ) {
+        NavigableListDetailPaneScaffold(
+            modifier = Modifier.fillMaxSize(),
+            navigator = scaffoldNavigator,
+            listPane = {
+                AnimatedPane {
+                    if (selectedCategory == null) {
+                        CategoryCards { category ->
+                            categoryBackStack.clear()
+                            changeCategory(category)
+                        }
+                    } else {
+                        CategoryDetailView(category = selectedCategory) { item ->
+                            backStack.clear()
+                            scope.launch {
+                                scaffoldNavigator.navigateTo(
+                                    ListDetailPaneScaffoldRole.Detail,
+                                    item
+                                )
+                            }
                         }
                     }
                 }
-            }
-        },
-        detailPane = {
-            AnimatedPane {
-                scaffoldNavigator.currentDestination?.contentKey?.let {
-                    MyDetails(it)
+            },
+            detailPane = {
+                AnimatedPane {
+                    scaffoldNavigator.currentDestination?.contentKey?.let {
+                        MyDetails(it)
+                    }
                 }
             }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+fun handleBack(
+    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
+    selectedCategory: DrinkCategory?,
+    onCategoryChange: (DrinkCategory?) -> Unit,
+    backStack: MutableList<MyItem>,
+    categoryBackStack: MutableList<DrinkCategory>,
+    scope: CoroutineScope
+): Boolean {
+    return when {
+        scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail -> {
+            scaffoldNavigator.currentDestination?.contentKey?.let { currentKey ->
+                backStack.add(0, currentKey)
+            }
+            scope.launch {
+                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
+            }
+            true
         }
-    )
+
+        selectedCategory != null -> {
+            categoryBackStack.add(0, selectedCategory)
+            onCategoryChange.invoke(null)
+            true
+        }
+
+        else -> false
+    }
 }
 
 
-@Composable
+    @Composable
 fun TimerFragment() {
     var totalTime by rememberSaveable { mutableStateOf(60) } // czas w sekundach
     var timeLeft by rememberSaveable { mutableStateOf(totalTime) }
