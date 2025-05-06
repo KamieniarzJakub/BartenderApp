@@ -69,6 +69,7 @@ import androidx.compose.material.icons.filled.*
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -87,11 +88,139 @@ class MainActivity : ComponentActivity() {
         setContent {
             BartenderJetpackTheme {
                 val viewModel: MainViewModel = viewModel()
-                CenterAlignedTopAppBarExample(viewModel = viewModel)
+                ScaffoldWithNavigationDrawer(viewModel = viewModel)
             }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScaffoldWithNavigationDrawer(viewModel: MainViewModel) {
+    val selectedCategory by viewModel.selectedCategory
+
+    // Setup for Navigation Drawer
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    // ModalDrawer for the navigation
+    ModalDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            // Navigation Drawer content
+            Column {
+                Text(
+                    text = "Categories",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+                LazyColumn {
+                    items(drinkCategories) { category ->
+                        ListItem(
+                            modifier = Modifier.clickable {
+                                viewModel.setSelectedCategory(category)
+                                scope.launch {
+                                    drawerState.close()  // Close drawer when category is selected
+                                }
+                            },
+                            headlineContent = { Text(category.name) },
+                            supportingContent = { Text(category.description) },
+                            leadingContent = {
+                                Image(
+                                    painter = painterResource(id = R.drawable.icon),
+                                    contentDescription = category.name,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        content = {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                text = selectedCategory?.name ?: "Select a Category",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Filled.Menu, contentDescription = "Open Drawer")
+                            }
+                        }
+                    )
+                },
+                // Wrapping the main content
+                content = { padding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        // Main content displaying drinks of the selected category
+                        if (selectedCategory != null) {
+                            CategoryDetailView(category = selectedCategory!!) { item ->
+                                // Handle item click (navigate to drink detail)
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(padding),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Please select a category")
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    )
+}
+
+@Composable
+fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(category.drinks) { drink ->
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onDrinkClick(
+                            MyItem(
+                                id = drink.name.hashCode(),
+                                name = drink.name,
+                                ingredients = drink.ingredients,
+                                recipe = drink.recipe
+                            )
+                        )
+                    },
+                headlineContent = { Text(drink.name) },
+                supportingContent = { Text(drink.ingredients) },
+                leadingContent = {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon),
+                        contentDescription = "Obrazek koktajlu",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            )
+        }
+    }
+}
+
 
 fun getPhoneNumberFromUri(context: Context, contactUri: Uri): String? {
     val contentResolver = context.contentResolver
@@ -394,39 +523,6 @@ fun TimerFragment() {
 
 
 
-@Composable
-fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(category.drinks) { drink ->
-            ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onDrinkClick(
-                            MyItem(
-                                id = drink.name.hashCode(),
-                                name = drink.name,
-                                ingredients = drink.ingredients,
-                                recipe = drink.recipe
-                            )
-                        )
-                    },
-                headlineContent = { Text(drink.name) },
-                supportingContent = { Text(drink.ingredients) },
-                leadingContent = {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon),
-                        contentDescription = "Obrazek koktajlu",
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            )
-        }
-    }
-}
 
 
 
