@@ -261,6 +261,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(
 
     Box(
         modifier = Modifier
+            .padding(paddingValues)
             .fillMaxSize()
             .pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
                 detectHorizontalDragGestures(
