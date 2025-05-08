@@ -55,6 +55,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomAppBarState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -113,6 +114,9 @@ fun Context.getActivity(): ComponentActivity? = when (this) {
 fun BartenderApp(viewModel: MainViewModel) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Drink>()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState()) // https://developer.android.com/develop/ui/compose/components/app-bars#scroll
+    val scrollBehaviorBottom = BottomAppBarDefaults.exitAlwaysScrollBehavior(
+        rememberBottomAppBarState()
+    )
     val selectedCategory by viewModel.selectedCategory
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -194,7 +198,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                 )
             },
             bottomBar = {
-                BottomAppBar(containerColor = BottomAppBarDefaults.containerColor, contentPadding = PaddingValues(16.dp,0.dp)) {
+                BottomAppBar(containerColor = BottomAppBarDefaults.containerColor, contentPadding = PaddingValues(16.dp,0.dp), scrollBehavior = scrollBehaviorBottom) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly.also { Arrangement.Center }, verticalAlignment = Alignment.CenterVertically){
                         val dark = isSystemInDarkTheme()
                         val color = if (dark) Color.White else Color.Black
