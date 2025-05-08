@@ -50,9 +50,11 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -114,6 +116,7 @@ fun BartenderApp(viewModel: MainViewModel) {
     val selectedCategory by viewModel.selectedCategory
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val isDetailVisible by rememberUpdatedState(newValue = scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail)
 
     ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
         ModalDrawerSheet() {
@@ -143,14 +146,18 @@ fun BartenderApp(viewModel: MainViewModel) {
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
             topBar = {
-                CenterAlignedTopAppBar(
+                LargeTopAppBar(
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.primary,
                     ),
                     title = {
                         Text(
-                            "Drinki",
+                            when {
+                                isDetailVisible -> viewModel.peekBack()?.name ?: "???"
+                                selectedCategory != null -> selectedCategory!!.name
+                                else -> "Drinki"
+                            },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -183,6 +190,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                         }
                     },
                     scrollBehavior = scrollBehavior,
+
                 )
             },
             bottomBar = {
@@ -203,7 +211,6 @@ fun BartenderApp(viewModel: MainViewModel) {
                                 contentDescription = "Lista drinków",
                                 tint = color
                             )
-                            val isDetailVisible by rememberUpdatedState(newValue = scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail)
                             if (isDetailVisible){
                                 Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
                                 Icon(

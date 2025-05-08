@@ -25,6 +25,7 @@ class MainViewModel(
 
     fun pushBack(item: Drink) = _backStack.add(0, item)
     fun popBack(): Drink? = if (_backStack.isNotEmpty()) _backStack.removeAt(0) else null
+    fun peekBack(): Drink? = _backStack.getOrNull(0)
 
     fun pushCategoryBack(category: DrinkCategory) = _categoryBackStack.add(0, category)
     fun popCategoryBack(): DrinkCategory? = if (_categoryBackStack.isNotEmpty()) _categoryBackStack.removeAt(0) else null
