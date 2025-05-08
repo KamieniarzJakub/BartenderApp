@@ -60,6 +60,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -156,15 +157,22 @@ fun BartenderApp(viewModel: MainViewModel) {
                         titleContentColor = MaterialTheme.colorScheme.primary,
                     ),
                     title = {
-                        Text(
-                            when {
-                                isDetailVisible -> viewModel.peekBack()?.name ?: "???"
-                                selectedCategory != null -> selectedCategory!!.name
-                                else -> "Drinki"
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Column{
+                            Text(
+                                when {
+                                    isDetailVisible -> viewModel.peekBack()?.name ?: "???"
+                                    selectedCategory != null -> selectedCategory!!.name
+                                    else -> "Drinki"
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Icon(
+                                painter = painterResource(R.drawable.icon),
+                                contentDescription = "Image",
+                                tint = Color.Unspecified
+                            )
+                        }
                     },
                     navigationIcon = {
                         if (selectedCategory != null) {
