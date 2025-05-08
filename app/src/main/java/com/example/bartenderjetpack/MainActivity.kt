@@ -179,67 +179,68 @@ fun BartenderAppBody(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize()
-            .pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { _, dragAmount ->
+    Box(modifier = Modifier.fillMaxSize().padding(paddingValues).pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
+        detectHorizontalDragGestures(
+            onHorizontalDrag = { _, dragAmount ->
 
-                        if (dragAmount > 50) {
-                            handleBack(
-                                scaffoldNavigator,
-                                selectedCategory,
-                                changeCategory,
-                                viewModel,
-                                scope
+                if (dragAmount > 50) {
+                    handleBack(
+                        scaffoldNavigator,
+                        selectedCategory,
+                        changeCategory,
+                        viewModel,
+                        scope
+                    )
+                } else if (dragAmount < -50) {
+                    viewModel.popCategoryBack()?.let {
+                        changeCategory(it)
+                    } ?: viewModel.popBack()?.let {
+                        scope.launch {
+                            scaffoldNavigator.navigateTo(
+                                ListDetailPaneScaffoldRole.Detail,
+                                it
                             )
-                        } else if (dragAmount < -50) {
-                            viewModel.popCategoryBack()?.let {
-                                changeCategory(it)
-                            } ?: viewModel.popBack()?.let {
-                                scope.launch {
-                                    scaffoldNavigator.navigateTo(
-                                        ListDetailPaneScaffoldRole.Detail,
-                                        it
-                                    )
-                                }
-                            }
                         }
-                    }
-                )
-            }
-    ) {
-        NavigableListDetailPaneScaffold(
-            modifier = Modifier.fillMaxSize(),
-            navigator = scaffoldNavigator,
-            listPane = {
-                AnimatedPane {
-                    if (selectedCategory == null) {
-                        CategoryCards {
-                            viewModel.clearBackStacks()
-                            changeCategory(it)
-                        }
-                    } else {
-                        CategoryDetailView(selectedCategory) { item ->
-                            viewModel.clearBackStacks()
-                            scope.launch {
-                                scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
-                            }
-                        }
-                    }
-                }
-            },
-            detailPane = {
-                AnimatedPane {
-                    scaffoldNavigator.currentDestination?.contentKey?.let {
-                        DrinkDetails(it)
-                        if (viewModel.backStack.isEmpty()) viewModel.pushBack(it)
                     }
                 }
             }
         )
+    }) {
+        if (selectedCategory == null) {
+
+            CategoryCards {
+                viewModel.clearBackStacks()
+                changeCategory(it)
+            }
+
+        } else {
+            NavigableListDetailPaneScaffold(
+                modifier = Modifier
+                    .fillMaxSize(),
+                navigator = scaffoldNavigator,
+                listPane = {
+                    AnimatedPane(modifier = Modifier.fillMaxSize()) {
+                        CategoryDetailView(selectedCategory) { item ->
+                            viewModel.clearBackStacks()
+                            scope.launch {
+                                scaffoldNavigator.navigateTo(
+                                    ListDetailPaneScaffoldRole.Detail,
+                                    item
+                                )
+                            }
+                        }
+                    }
+                },
+                detailPane = {
+                    AnimatedPane(modifier = Modifier.fillMaxSize()) {
+                        scaffoldNavigator.currentDestination?.contentKey?.let {
+                            DrinkDetails(it)
+                            if (viewModel.backStack.isEmpty()) viewModel.pushBack(it)
+                        }
+                    }
+                }
+            )
+        }
     }
 }
 
