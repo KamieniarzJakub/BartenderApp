@@ -7,24 +7,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -48,18 +41,16 @@ import androidx.compose.ui.unit.dp
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.window.core.layout.WindowWidthSizeClass
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bartenderjetpack.model.Drink
 import com.example.bartenderjetpack.model.DrinkCategory
 import com.example.bartenderjetpack.model.MainViewModel
+import com.example.bartenderjetpack.ui.CategoryCards
+import com.example.bartenderjetpack.ui.CategoryDetailView
 import com.example.bartenderjetpack.ui.DrinkDetails
 import com.example.bartenderjetpack.ui.handleBack
 
@@ -152,7 +143,7 @@ fun BartenderApp(viewModel: MainViewModel) {
             )
         },
     ) { innerPadding ->
-        SampleNavigableListDetailPaneScaffoldFull(
+        BartenderAppBody(
             innerPadding,
             scaffoldNavigator,
             selectedCategory,
@@ -164,7 +155,7 @@ fun BartenderApp(viewModel: MainViewModel) {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SampleNavigableListDetailPaneScaffoldFull(
+fun BartenderAppBody(
     paddingValues: PaddingValues,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Drink>,
     selectedCategory: DrinkCategory?,
@@ -254,81 +245,6 @@ fun SampleNavigableListDetailPaneScaffoldFull(
 
 
 
-@Composable
-fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(category.drinks) { drink ->
-            ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onDrinkClick(
-                            Drink(
-                                name = drink.name,
-                                ingredients = drink.ingredients,
-                                recipe = drink.recipe
-                            )
-                        )
-                    },
-                headlineContent = { Text(drink.name) },
-                supportingContent = { Text(drink.ingredients) },
-                leadingContent = {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon),
-                        contentDescription = "Obrazek koktajlu",
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            )
-        }
-    }
-}
-
-
-
-@Composable
-fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(drinkCategories.size) { index ->
-            val category = drinkCategories[index]
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCategoryClick(category) },
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Image(
-                        painter = painterResource(id = R.drawable.icon),
-                        contentDescription = category.name,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = category.name,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = category.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
 
 
 
