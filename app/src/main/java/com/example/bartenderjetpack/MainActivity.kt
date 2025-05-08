@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -64,6 +65,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.window.core.layout.WindowWidthSizeClass
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bartenderjetpack.model.Drink
@@ -151,26 +153,34 @@ fun BartenderApp(viewModel: MainViewModel) {
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
             topBar = {
-                LargeTopAppBar(
+                CenterAlignedTopAppBar(
+                    expandedHeight = when {isDetailVisible -> 300.dp else -> TopAppBarDefaults.LargeAppBarExpandedHeight},
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.primary,
                     ),
                     title = {
                         Column{
+                            if (isDetailVisible){
+                                Icon(
+                                    painter = painterResource(R.drawable.icon),
+                                    contentDescription = "Zdjęcie drinka",
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                )
+                            }
                             Text(
                                 when {
                                     isDetailVisible -> viewModel.peekBack()?.name ?: "???"
                                     selectedCategory != null -> selectedCategory!!.name
                                     else -> "Drinki"
                                 },
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Icon(
-                                painter = painterResource(R.drawable.icon),
-                                contentDescription = "Image",
-                                tint = Color.Unspecified
+                                maxLines = when {isDetailVisible -> 3 else -> 1},
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     },

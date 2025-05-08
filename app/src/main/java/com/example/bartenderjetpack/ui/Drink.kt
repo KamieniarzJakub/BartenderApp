@@ -101,18 +101,6 @@ fun DrinkDetails(item: Drink) {
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.icon),
-                contentDescription = item.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            )
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-            )
             Text(
                 text = "Składniki:\n${item.ingredients}",
                 style = MaterialTheme.typography.bodyLarge,
