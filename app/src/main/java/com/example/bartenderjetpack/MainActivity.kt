@@ -1,20 +1,27 @@
 package com.example.bartenderjetpack
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
-import android.telephony.SmsManager
-import android.widget.Toast
 import android.provider.ContactsContract
+import android.telephony.SmsManager
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +50,7 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldPredictiveBackHandler
+import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.rememberTopAppBarState
@@ -67,11 +75,15 @@ import androidx.compose.material.icons.filled.*
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.core.content.ContextCompat
 import androidx.window.core.layout.WindowWidthSizeClass
-
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,21 +91,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BartenderJetpackTheme {
-                CenterAlignedTopAppBarExample()
+                val viewModel: MainViewModel = viewModel()
+                CenterAlignedTopAppBarExample(viewModel = viewModel)
             }
         }
     }
 }
 
-fun getPhoneNumberFromUri(context: Context, contactUri: android.net.Uri): String? {
+fun getPhoneNumberFromUri(context: Context, contactUri: Uri): String? {
     val contentResolver = context.contentResolver
     val cursor = contentResolver.query(contactUri, null, null, null, null)
     cursor?.use {
         if (it.moveToFirst()) {
             val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
-            val hasPhoneNumber = it.getInt(it.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0
-
-            if (hasPhoneNumber) {
+            val hasPhone = it.getInt(it.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0
+            if (hasPhone) {
                 val phones = contentResolver.query(
                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                     null,
@@ -112,14 +124,42 @@ fun getPhoneNumberFromUri(context: Context, contactUri: android.net.Uri): String
     return null
 }
 
+class MainViewModel(
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _backStack = mutableStateListOf<MyItem>()
+    val backStack: List<MyItem> get() = _backStack
+
+    private val _categoryBackStack = mutableStateListOf<DrinkCategory>()
+    val categoryBackStack: List<DrinkCategory> get() = _categoryBackStack
+
+    private val _selectedCategory = mutableStateOf<DrinkCategory?>(null)
+    val selectedCategory: State<DrinkCategory?> get() = _selectedCategory
+
+    fun setSelectedCategory(category: DrinkCategory?) {
+        _selectedCategory.value = category
+    }
+
+    fun pushBack(item: MyItem) = _backStack.add(0, item)
+    fun popBack(): MyItem? = if (_backStack.isNotEmpty()) _backStack.removeAt(0) else null
+
+    fun pushCategoryBack(category: DrinkCategory) = _categoryBackStack.add(0, category)
+    fun popCategoryBack(): DrinkCategory? = if (_categoryBackStack.isNotEmpty()) _categoryBackStack.removeAt(0) else null
+
+    fun clearBackStacks() {
+        _backStack.clear()
+        _categoryBackStack.clear()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun CenterAlignedTopAppBarExample() {
+fun CenterAlignedTopAppBarExample(viewModel: MainViewModel) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    var selectedCategory by remember { mutableStateOf<DrinkCategory?>(null) }
+    val selectedCategory by viewModel.selectedCategory
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -138,41 +178,41 @@ fun CenterAlignedTopAppBarExample() {
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            if (scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.List){
-                                if (selectedCategory == null){
-                                    scaffoldNavigator.navigateBack()
-                                } else {
-                                    selectedCategory = null
-                                }
-                            } else if (scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) {
-                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
-                            } else {
-                                Toast.makeText(context, "Unknown", Toast.LENGTH_SHORT).show()
+                    if (selectedCategory != null) {
+                        IconButton(onClick = {
+                            scope.launch {
+                                handleBack(
+                                    scaffoldNavigator,
+                                    selectedCategory,
+                                    { viewModel.setSelectedCategory(it) },
+                                    viewModel,
+                                    scope
+                                )
                             }
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Wróć"
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
-                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
-                        )
+                    IconButton(onClick = { /* Placeholder */ }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
                     }
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
-    ) {
-            innerPadding ->
-        SampleNavigableListDetailPaneScaffoldFull(innerPadding, scaffoldNavigator,selectedCategory,{ category -> selectedCategory = category})
+    ) { innerPadding ->
+        SampleNavigableListDetailPaneScaffoldFull(
+            innerPadding,
+            scaffoldNavigator,
+            selectedCategory,
+            { viewModel.setSelectedCategory(it) },
+            viewModel
+        )
     }
 }
 
@@ -192,60 +232,142 @@ fun customPaneScaffoldDirective(currentWindowAdaptiveInfo: WindowAdaptiveInfo): 
     )
 }
 
+fun Context.getActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.getActivity()
+    else -> null
+}
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SampleNavigableListDetailPaneScaffoldFull(
     paddingValues: PaddingValues,
     scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
     selectedCategory: DrinkCategory?,
-    changeCategory: (DrinkCategory) -> Unit
+    changeCategory: (DrinkCategory?) -> Unit,
+    viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
     val customScaffoldDirective = customPaneScaffoldDirective(currentWindowAdaptiveInfo())
 
-    ThreePaneScaffoldPredictiveBackHandler(
-        navigator = scaffoldNavigator,
-        backBehavior = BackNavigationBehavior.PopLatest
-    )
+    val activity = LocalContext.current.getActivity()
+    BackHandler {
+        val handled = handleBack(
+            scaffoldNavigator,
+            selectedCategory,
+            changeCategory,
+            viewModel,
+            scope
+        )
+        if (!handled) {
+            activity?.finish()
+        }
+    }
 
-    ListDetailPaneScaffold(
-        directive = customScaffoldDirective,
-        scaffoldState = scaffoldNavigator.scaffoldState,
-        listPane = {
-            AnimatedPane {
-                if (selectedCategory == null) {
-                    CategoryCards { category ->
-                        changeCategory(category)
-                    }
-                } else {
-                    CategoryDetailView(category = selectedCategory) { item ->
-                        scope.launch {
-                            scaffoldNavigator.navigateTo(
-                                ListDetailPaneScaffoldRole.Detail,
-                                item
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { _, dragAmount ->
+
+                        if (dragAmount > 50) {
+                            handleBack(
+                                scaffoldNavigator,
+                                selectedCategory,
+                                changeCategory,
+                                viewModel,
+                                scope
                             )
+                        } else if (dragAmount < -50) {
+                            viewModel.popCategoryBack()?.let {
+                                changeCategory(it)
+                            } ?: viewModel.popBack()?.let {
+                                scope.launch {
+                                    scaffoldNavigator.navigateTo(
+                                        ListDetailPaneScaffoldRole.Detail,
+                                        it
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+    ) {
+        NavigableListDetailPaneScaffold(
+            modifier = Modifier.fillMaxSize(),
+            navigator = scaffoldNavigator,
+            listPane = {
+                AnimatedPane {
+                    if (selectedCategory == null) {
+                        CategoryCards {
+                            viewModel.clearBackStacks()
+                            changeCategory(it)
+                        }
+                    } else {
+                        CategoryDetailView(selectedCategory) { item ->
+                            viewModel.clearBackStacks()
+                            scope.launch {
+                                scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
+                            }
                         }
                     }
                 }
-            }
-        },
-        detailPane = {
-            AnimatedPane {
-                scaffoldNavigator.currentDestination?.contentKey?.let {
-                    MyDetails(it)
+            },
+            detailPane = {
+                AnimatedPane {
+                    scaffoldNavigator.currentDestination?.contentKey?.let {
+                        MyDetails(it)
+                        if (viewModel.backStack.isEmpty()) viewModel.pushBack(it)
+                    }
                 }
             }
-        },
-        modifier = Modifier.padding(paddingValues),
-    )
+        )
+    }
 }
+
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+fun handleBack(
+    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
+    selectedCategory: DrinkCategory?,
+    onCategoryChange: (DrinkCategory?) -> Unit,
+    viewModel: MainViewModel,
+    scope: CoroutineScope
+): Boolean {
+    return when {
+        scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail -> {
+            val contentKey = scaffoldNavigator.currentDestination?.contentKey
+            contentKey?.let { viewModel.pushBack(it) }
+
+            scope.launch {
+                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)
+            }
+            true
+        }
+
+        selectedCategory != null -> {
+            viewModel.pushCategoryBack(selectedCategory)
+            onCategoryChange(null)
+            true
+        }
+
+        else -> {
+            false
+        }
+    }
+}
+
 
 
 @Composable
 fun TimerFragment() {
-    var totalTime by rememberSaveable { mutableStateOf(60) } // czas w sekundach
+    var totalTime by rememberSaveable { mutableStateOf(60) }
     var timeLeft by rememberSaveable { mutableStateOf(totalTime) }
     var isRunning by rememberSaveable { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
 
     // uruchamianie minutnika
     LaunchedEffect(isRunning) {
@@ -422,11 +544,8 @@ fun MyDetails(item: MyItem) {
         }
     }
 
-    val smsPermission = Manifest.permission.SEND_SMS
-    val contactPermission = Manifest.permission.READ_CONTACTS
-
-    val hasSmsPermission = ContextCompat.checkSelfPermission(context, smsPermission) == PackageManager.PERMISSION_GRANTED
-    val hasContactPermission = ContextCompat.checkSelfPermission(context, contactPermission) == PackageManager.PERMISSION_GRANTED
+    val hasSmsPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+    val hasContactPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
 
     Scaffold(
         floatingActionButton = {
@@ -435,8 +554,8 @@ fun MyDetails(item: MyItem) {
                     contactLauncher.launch(null)
                 } else {
                     permissionLauncher.launch(arrayOf(
-                        smsPermission,
-                        contactPermission
+                        Manifest.permission.SEND_SMS,
+                        Manifest.permission.READ_CONTACTS
                     ))
                 }
             }) {

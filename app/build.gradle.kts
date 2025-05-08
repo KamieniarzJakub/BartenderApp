@@ -63,4 +63,5 @@ dependencies {
     implementation(libs.androidx.adaptive.layout)
     implementation(libs.androidx.adaptive.navigation)
     implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 }
