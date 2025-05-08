@@ -110,7 +110,7 @@ fun Context.getActivity(): ComponentActivity? = when (this) {
 @Composable
 fun BartenderApp(viewModel: MainViewModel) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Drink>()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState()) // https://developer.android.com/develop/ui/compose/components/app-bars#scroll
     val selectedCategory by viewModel.selectedCategory
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
