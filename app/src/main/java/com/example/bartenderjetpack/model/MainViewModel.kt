@@ -10,6 +10,9 @@ class MainViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    private val _showDrawer = mutableStateOf(false)
+    val showDrawer: State<Boolean> get() = _showDrawer
+
     private val _backStack = mutableStateListOf<Drink>()
     val backStack: List<Drink> get() = _backStack
 
@@ -21,6 +24,10 @@ class MainViewModel(
 
     fun setSelectedCategory(category: DrinkCategory?) {
         _selectedCategory.value = category
+    }
+
+    fun toggleDrawer() {
+        _showDrawer.value = !_showDrawer.value
     }
 
     fun pushBack(item: Drink) = _backStack.add(0, item)

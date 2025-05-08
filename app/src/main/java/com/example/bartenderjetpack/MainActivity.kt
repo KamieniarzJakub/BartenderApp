@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -110,7 +113,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                 ),
                 title = {
                     Text(
-                        "Centered Top App Bar",
+                        "Drinki",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -136,8 +139,10 @@ fun BartenderApp(viewModel: MainViewModel) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Placeholder */ }) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                    if (selectedCategory != null) {
+                        IconButton(onClick = {viewModel.toggleDrawer()}) {
+                            Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                        }
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -165,7 +170,7 @@ fun BartenderAppBody(
 ) {
     val scope = rememberCoroutineScope()
     val customScaffoldDirective = customPaneScaffoldDirective(currentWindowAdaptiveInfo())
-
+    val showDrawer by viewModel.showDrawer
     val activity = LocalContext.current.getActivity()
     BackHandler {
         val handled = handleBack(
@@ -207,6 +212,7 @@ fun BartenderAppBody(
             }
         )
     }) {
+
         if (selectedCategory == null) {
 
             CategoryCards {
@@ -241,6 +247,19 @@ fun BartenderAppBody(
                     }
                 }
             )
+        }
+    }
+
+    if (showDrawer){
+        ModalDrawerSheet {
+            Text("Drawer title", modifier = Modifier.padding(16.dp))
+            HorizontalDivider()
+            NavigationDrawerItem(
+                label = { Text(text = "Drawer Item") },
+                selected = false,
+                onClick = { /*TODO*/ }
+            )
+            // ...other drawer items
         }
     }
 }
