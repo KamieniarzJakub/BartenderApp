@@ -1,17 +1,14 @@
 package com.example.bartenderjetpack
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
 import android.provider.ContactsContract
 import android.telephony.SmsManager
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -46,10 +43,8 @@ import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldPredictiveBackHandler
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
@@ -128,8 +123,8 @@ class MainViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _backStack = mutableStateListOf<MyItem>()
-    val backStack: List<MyItem> get() = _backStack
+    private val _backStack = mutableStateListOf<Drink>()
+    val backStack: List<Drink> get() = _backStack
 
     private val _categoryBackStack = mutableStateListOf<DrinkCategory>()
     val categoryBackStack: List<DrinkCategory> get() = _categoryBackStack
@@ -141,8 +136,8 @@ class MainViewModel(
         _selectedCategory.value = category
     }
 
-    fun pushBack(item: MyItem) = _backStack.add(0, item)
-    fun popBack(): MyItem? = if (_backStack.isNotEmpty()) _backStack.removeAt(0) else null
+    fun pushBack(item: Drink) = _backStack.add(0, item)
+    fun popBack(): Drink? = if (_backStack.isNotEmpty()) _backStack.removeAt(0) else null
 
     fun pushCategoryBack(category: DrinkCategory) = _categoryBackStack.add(0, category)
     fun popCategoryBack(): DrinkCategory? = if (_categoryBackStack.isNotEmpty()) _categoryBackStack.removeAt(0) else null
@@ -156,7 +151,7 @@ class MainViewModel(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun CenterAlignedTopAppBarExample(viewModel: MainViewModel) {
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<MyItem>()
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Drink>()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scope = rememberCoroutineScope()
     val selectedCategory by viewModel.selectedCategory
@@ -242,7 +237,7 @@ fun Context.getActivity(): ComponentActivity? = when (this) {
 @Composable
 fun SampleNavigableListDetailPaneScaffoldFull(
     paddingValues: PaddingValues,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Drink>,
     selectedCategory: DrinkCategory?,
     changeCategory: (DrinkCategory?) -> Unit,
     viewModel: MainViewModel
@@ -330,7 +325,7 @@ fun SampleNavigableListDetailPaneScaffoldFull(
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 fun handleBack(
-    scaffoldNavigator: ThreePaneScaffoldNavigator<MyItem>,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Drink>,
     selectedCategory: DrinkCategory?,
     onCategoryChange: (DrinkCategory?) -> Unit,
     viewModel: MainViewModel,
@@ -435,7 +430,7 @@ fun TimerFragment() {
 }
 
 @Composable
-fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) {
+fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -446,8 +441,7 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (MyItem) -> Unit) 
                     .fillMaxWidth()
                     .clickable {
                         onDrinkClick(
-                            MyItem(
-                                id = drink.name.hashCode(),
+                            Drink(
                                 name = drink.name,
                                 ingredients = drink.ingredients,
                                 recipe = drink.recipe
@@ -515,7 +509,7 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
 
 
 @Composable
-fun MyDetails(item: MyItem) {
+fun MyDetails(item: Drink) {
     val context = LocalContext.current
 
     // Launcher do wyboru kontaktu
@@ -612,9 +606,7 @@ fun sendSms(context: Context, phoneNumber: String, message: String) {
 
 
 @Parcelize
-class MyItem(val id: Int, val name: String, val ingredients: String, val recipe: String) : Parcelable
-
-data class Drink(val name: String, val ingredients: String, val recipe: String)
+data class Drink(val name: String, val ingredients: String, val recipe: String) : Parcelable
 
 data class DrinkCategory(
     val name: String,
