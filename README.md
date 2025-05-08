@@ -8,8 +8,8 @@ Wymagania minimalne:
 3. W aplikacji należy zastosować motywy.
 4. ~~W aplikacji należy korzystać z fragmentów (w przypadku stosowania Jetpack Compose nie wymagane)~~
 5. ~~Aplikacja ma działać poprawnie przy zmianie orientacji urządzenia.~~
-6. Każda aktywność ma mieć pasek aplikacji w postaci paska narzędzi.
-7. Ekran szczegółów ma być przewijany w pionie razem z paskiem aplikacji.
+6. ~~Każda aktywność ma mieć pasek aplikacji w postaci paska narzędzi.~~
+7. ~~Ekran szczegółów ma być przewijany w pionie razem z paskiem aplikacji.~~
 8. ~~Na ekranie szczegółów obrazek ma się pojawić na pasku aplikacji, ale ma się razem z nim zwijać.~~
 9. ~~Przechodzenie pomiędzy kartami ma się odbywać także za pomocą gestu przeciągnięcia.~~
 10. ~~Do aplikacji należy dodać szufladę nawigacyjną~~
@@ -19,7 +19,7 @@ Elementy dodatkowe:
 2. ~~UI w Jetpack Compose~~
 3. Dane umieszczone poza urządzeniem
 4. Wykorzystanie motywów z biblioteki wzornictwa (material design)
-5. Dodanie do paska aplikacji akcji. 
+5. ~~Dodanie do paska aplikacji akcji.~~
 6. Dodanie do paska aplikacji opcji wyszukiwania przepisu zawierającego w nazwie i/lub opisie podany tekst.
 7. Opracowanie własnych ikon związanych z akcją.  
 8. ~~Opracowanie własnej ikony dla aplikacji~~
