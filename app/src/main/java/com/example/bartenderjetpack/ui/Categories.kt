@@ -42,8 +42,7 @@ import com.example.bartenderjetpack.drinkCategories
 import com.example.bartenderjetpack.model.Drink
 import com.example.bartenderjetpack.model.DrinkCategory
 
-class Categories {
-}@Composable
+@Composable
 fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),

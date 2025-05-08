@@ -12,7 +12,7 @@ Wymagania minimalne:
 7. Ekran szczegółów ma być przewijany w pionie razem z paskiem aplikacji.
 8. Na ekranie szczegółów obrazek ma się pojawić na pasku aplikacji, ale ma się razem z nim zwijać.
 9. ~~Przechodzenie pomiędzy kartami ma się odbywać także za pomocą gestu przeciągnięcia.~~
-10. Do aplikacji należy dodać szufladę nawigacyjną 
+10. ~~Do aplikacji należy dodać szufladę nawigacyjną~~
 
 Elementy dodatkowe:
 1. ~~Kod w Kotlinie~~

@@ -41,9 +41,14 @@ import androidx.compose.ui.unit.dp
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -100,62 +105,87 @@ fun BartenderApp(viewModel: MainViewModel) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val selectedCategory by viewModel.selectedCategory
     val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    Scaffold(
-        contentWindowInsets = WindowInsets.safeContent,
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
+        ModalDrawerSheet() {
+            Text("Kategorie drinków", modifier = Modifier.padding(16.dp))
+            HorizontalDivider()
+            drinkCategories.forEach { category ->
+                NavigationDrawerItem(
+                    label = { Text(text = category.name) },
+                    selected = category == selectedCategory,
+                    onClick = {
+                        scope.launch {
+                        if (selectedCategory != category) {
+                            viewModel.clearBackStacks()
+                            viewModel.pushCategoryBack(category)
+                            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List,null)
+                        }
+                        viewModel.setSelectedCategory(category)
+                        }
+                    },
+                    icon = {Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Kategoria: ${category.name}")},
+                )
+            }
+        }
+    }) {
+        Scaffold(
+            contentWindowInsets = WindowInsets.safeContent,
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
-        topBar = {
-            CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                ),
-                title = {
-                    Text(
-                        "Drinki",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    if (selectedCategory != null) {
-                        IconButton(onClick = {
-                            scope.launch {
-                                handleBack(
-                                    scaffoldNavigator,
-                                    selectedCategory,
-                                    { viewModel.setSelectedCategory(it) },
-                                    viewModel,
-                                    scope
+            topBar = {
+                CenterAlignedTopAppBar(
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    title = {
+                        Text(
+                            "Drinki",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    navigationIcon = {
+                        if (selectedCategory != null) {
+                            IconButton(onClick = {
+                                scope.launch {
+                                    handleBack(
+                                        scaffoldNavigator,
+                                        selectedCategory,
+                                        { viewModel.setSelectedCategory(it) },
+                                        viewModel,
+                                        scope
+                                    )
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Wróć"
                                 )
                             }
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Wróć"
-                            )
                         }
-                    }
-                },
-                actions = {
-                    if (selectedCategory != null) {
-                        IconButton(onClick = {viewModel.toggleDrawer()}) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                    },
+                    actions = {
+                        if (selectedCategory != null) {
+                            IconButton(onClick = { scope.launch { drawerState.apply { if (isClosed) open() else close() } } }) {
+                                Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                            }
                         }
-                    }
-                },
-                scrollBehavior = scrollBehavior,
+                    },
+                    scrollBehavior = scrollBehavior,
+                )
+            },
+        ) { innerPadding ->
+            BartenderAppBody(
+                innerPadding,
+                scaffoldNavigator,
+                selectedCategory,
+                { viewModel.setSelectedCategory(it) },
+                viewModel
             )
-        },
-    ) { innerPadding ->
-        BartenderAppBody(
-            innerPadding,
-            scaffoldNavigator,
-            selectedCategory,
-            { viewModel.setSelectedCategory(it) },
-            viewModel
-        )
+        }
     }
 }
 
@@ -170,7 +200,6 @@ fun BartenderAppBody(
 ) {
     val scope = rememberCoroutineScope()
     val customScaffoldDirective = customPaneScaffoldDirective(currentWindowAdaptiveInfo())
-    val showDrawer by viewModel.showDrawer
     val activity = LocalContext.current.getActivity()
     BackHandler {
         val handled = handleBack(
@@ -247,19 +276,6 @@ fun BartenderAppBody(
                     }
                 }
             )
-        }
-    }
-
-    if (showDrawer){
-        ModalDrawerSheet {
-            Text("Drawer title", modifier = Modifier.padding(16.dp))
-            HorizontalDivider()
-            NavigationDrawerItem(
-                label = { Text(text = "Drawer Item") },
-                selected = false,
-                onClick = { /*TODO*/ }
-            )
-            // ...other drawer items
         }
     }
 }
