@@ -99,6 +99,7 @@ fun BartenderApp(viewModel: MainViewModel) {
     val scope = rememberCoroutineScope()
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeContent,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
         topBar = {
