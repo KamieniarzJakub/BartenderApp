@@ -8,6 +8,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -41,8 +43,11 @@ import androidx.compose.ui.unit.dp
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
@@ -50,8 +55,11 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.window.core.layout.WindowWidthSizeClass
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bartenderjetpack.model.Drink
@@ -177,6 +185,43 @@ fun BartenderApp(viewModel: MainViewModel) {
                     scrollBehavior = scrollBehavior,
                 )
             },
+            bottomBar = {
+                BottomAppBar(containerColor = BottomAppBarDefaults.containerColor, contentPadding = PaddingValues(16.dp,0.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly.also { Arrangement.Center }, verticalAlignment = Alignment.CenterVertically){
+                        val dark = isSystemInDarkTheme()
+                        val color = if (dark) Color.White else Color.Black
+                        IconButton(onClick = {}) {
+                            Icon(
+                                painterResource(R.drawable.rounded_category_24),
+                                modifier = Modifier.size(36.dp),
+                                contentDescription = "Kategorie drinków",
+                                tint=color)
+                        }
+                        if (selectedCategory != null){
+                            Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    painterResource(R.drawable.baseline_format_list_bulleted_24),
+                                    modifier = Modifier.size(36.dp),
+                                    contentDescription = "Lista drinków",
+                                    tint = color
+                                )
+                            }
+                            if (viewModel.backStack.isNotEmpty()){
+                                Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
+                                IconButton(onClick = {}) {
+                                    Icon(
+                                        painterResource(R.drawable.baseline_local_bar_24),
+                                        modifier = Modifier.size(36.dp),
+                                        contentDescription = "Szczególy drinka",
+                                        tint = color
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         ) { innerPadding ->
             BartenderAppBody(
                 innerPadding,
