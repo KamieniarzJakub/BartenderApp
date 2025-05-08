@@ -190,33 +190,28 @@ fun BartenderApp(viewModel: MainViewModel) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly.also { Arrangement.Center }, verticalAlignment = Alignment.CenterVertically){
                         val dark = isSystemInDarkTheme()
                         val color = if (dark) Color.White else Color.Black
-                        IconButton(onClick = {}) {
-                            Icon(
-                                painterResource(R.drawable.rounded_category_24),
-                                modifier = Modifier.size(36.dp),
-                                contentDescription = "Kategorie drinków",
-                                tint=color)
-                        }
+                        Icon(
+                            painterResource(R.drawable.rounded_category_24),
+                            modifier = Modifier.size(36.dp),
+                            contentDescription = "Kategorie drinków",
+                            tint=color)
                         if (selectedCategory != null){
                             Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
-                            IconButton(onClick = {}) {
+                            Icon(
+                                painterResource(R.drawable.baseline_format_list_bulleted_24),
+                                modifier = Modifier.size(36.dp),
+                                contentDescription = "Lista drinków",
+                                tint = color
+                            )
+                            val isDetailVisible by rememberUpdatedState(newValue = scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail)
+                            if (isDetailVisible){
+                                Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
                                 Icon(
-                                    painterResource(R.drawable.baseline_format_list_bulleted_24),
+                                    painterResource(R.drawable.baseline_local_bar_24),
                                     modifier = Modifier.size(36.dp),
-                                    contentDescription = "Lista drinków",
+                                    contentDescription = "Szczególy drinka",
                                     tint = color
                                 )
-                            }
-                            if (viewModel.backStack.isNotEmpty()){
-                                Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
-                                IconButton(onClick = {}) {
-                                    Icon(
-                                        painterResource(R.drawable.baseline_local_bar_24),
-                                        modifier = Modifier.size(36.dp),
-                                        contentDescription = "Szczególy drinka",
-                                        tint = color
-                                    )
-                                }
                             }
                         }
                     }
