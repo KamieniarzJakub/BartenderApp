@@ -29,3 +29,4 @@ TODO:
 - podświetlanie aktywnego itema na widoku horyzontalnym
 - testy tabletu
 - wyszukiwanie
+- swipe z prawej na lewą na ostatnim ekranie szczegółów daje ??? w top app bar
