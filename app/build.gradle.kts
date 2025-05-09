@@ -66,4 +66,5 @@ dependencies {
     implementation(libs.androidx.material3.window.size.class1)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.material)
+    implementation(libs.coil.compose)
 }
