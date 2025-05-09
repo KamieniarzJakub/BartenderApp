@@ -57,7 +57,8 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
                             Drink(
                                 name = drink.name,
                                 ingredients = drink.ingredients,
-                                recipe = drink.recipe
+                                recipe = drink.recipe,
+                                imageUrl = drink.imageUrl
                             )
                         )
                     },
