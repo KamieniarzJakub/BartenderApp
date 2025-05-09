@@ -7,23 +7,38 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
@@ -34,40 +49,26 @@ import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
-import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomAppBarState
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.*
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.example.bartenderjetpack.model.Drink
 import com.example.bartenderjetpack.model.DrinkCategory
 import com.example.bartenderjetpack.model.MainViewModel
@@ -75,6 +76,8 @@ import com.example.bartenderjetpack.ui.CategoryCards
 import com.example.bartenderjetpack.ui.CategoryDetailView
 import com.example.bartenderjetpack.ui.DrinkDetails
 import com.example.bartenderjetpack.ui.handleBack
+import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,10 +94,11 @@ class MainActivity : ComponentActivity() {
 
 
 fun customPaneScaffoldDirective(currentWindowAdaptiveInfo: WindowAdaptiveInfo): PaneScaffoldDirective {
-    val horizontalPartitions = when(currentWindowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
-        WindowWidthSizeClass.EXPANDED -> 2
-        else -> 1
-    }
+    val horizontalPartitions =
+        when (currentWindowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
+            WindowWidthSizeClass.EXPANDED -> 2
+            else -> 1
+        }
 
     return PaneScaffoldDirective(
         maxHorizontalPartitions = horizontalPartitions,
@@ -112,11 +116,13 @@ fun Context.getActivity(): ComponentActivity? = when (this) {
     else -> null
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun BartenderApp(viewModel: MainViewModel) {
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Drink>()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState()) // https://developer.android.com/develop/ui/compose/components/app-bars#scroll
+    val scrollBehavior =
+        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState()) // https://developer.android.com/develop/ui/compose/components/app-bars#scroll
     val scrollBehaviorBottom = BottomAppBarDefaults.exitAlwaysScrollBehavior(
         rememberBottomAppBarState()
     )
@@ -135,15 +141,20 @@ fun BartenderApp(viewModel: MainViewModel) {
                     selected = category == selectedCategory,
                     onClick = {
                         scope.launch {
-                        if (selectedCategory != category) {
-                            viewModel.clearBackStacks()
-                            viewModel.pushCategoryBack(category)
-                            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List,null)
-                        }
-                        viewModel.setSelectedCategory(category)
+                            if (selectedCategory != category) {
+                                viewModel.clearBackStacks()
+                                viewModel.pushCategoryBack(category)
+                                scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List, null)
+                            }
+                            viewModel.setSelectedCategory(category)
                         }
                     },
-                    icon = {Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Kategoria: ${category.name}")},
+                    icon = {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Kategoria: ${category.name}"
+                        )
+                    },
                 )
             }
         }
@@ -153,88 +164,144 @@ fun BartenderApp(viewModel: MainViewModel) {
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
             topBar = {
-                CenterAlignedTopAppBar(
-                    expandedHeight = when {isDetailVisible -> 300.dp else -> TopAppBarDefaults.LargeAppBarExpandedHeight},
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    title = {
-                        Column{
-                            if (isDetailVisible){
-                                Icon(
-                                    painter = painterResource(R.drawable.icon),
-                                    contentDescription = "Zdjęcie drinka",
-                                    tint = Color.Unspecified,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp)
-                                )
-                            }
-                            Text(
-                                when {
-                                    isDetailVisible -> viewModel.peekBack()?.name ?: "???"
-                                    selectedCategory != null -> selectedCategory!!.name
-                                    else -> "Drinki"
-                                },
-                                maxLines = when {isDetailVisible -> 3 else -> 1},
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        if (selectedCategory != null) {
-                            IconButton(onClick = {
-                                scope.launch {
-                                    handleBack(
-                                        scaffoldNavigator,
-                                        selectedCategory,
-                                        { viewModel.setSelectedCategory(it) },
-                                        viewModel,
-                                        scope
+                when {
+                    isDetailVisible -> (
+                            LargeTopAppBar(
+//                                expandedHeight = 300.dp,
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = Color.Transparent,
+//                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    titleContentColor = MaterialTheme.colorScheme.primary,
+                                ),
+                                title = {
+                                    Text(("EXPANDED" + viewModel.peekBack()?.name),
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Wróć"
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        if (selectedCategory != null) {
-                            IconButton(onClick = { scope.launch { drawerState.apply { if (isClosed) open() else close() } } }) {
-                                Icon(Icons.Filled.Menu, contentDescription = "Menu")
-                            }
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
+                                },
+                                navigationIcon = {
+                                    if (selectedCategory != null) {
+                                        IconButton(onClick = {
+                                            scope.launch {
+                                                handleBack(
+                                                    scaffoldNavigator,
+                                                    selectedCategory,
+                                                    { viewModel.setSelectedCategory(it) },
+                                                    viewModel,
+                                                    scope
+                                                )
+                                            }
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                                contentDescription = "Wróć"
+                                            )
+                                        }
+                                    }
+                                },
+                                actions = {
+                                    if (selectedCategory != null) {
+                                        IconButton(onClick = { scope.launch { drawerState.apply { if (isClosed) open() else close() } } }) {
+                                            Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                                        }
+                                    }
+                                },
+                                scrollBehavior = scrollBehavior,
+//                                modifier = if(scrollBehavior.){Modifier.paint(painterResource(R.drawable.drink))} else {Modifier}
+                            )
+                            )
 
-                )
+                    else -> (
+                            CenterAlignedTopAppBar(
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    titleContentColor = MaterialTheme.colorScheme.primary,
+                                    //                            containerColor = Color.Transparent,
+                                ),
+                                title = {
+                                    Text(
+                                        when {
+                                            selectedCategory != null -> selectedCategory!!.name
+                                            else -> "Drinki"
+                                        },
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
+                                navigationIcon = {
+                                    if (selectedCategory != null) {
+                                        IconButton(onClick = {
+                                            scope.launch {
+                                                handleBack(
+                                                    scaffoldNavigator,
+                                                    selectedCategory,
+                                                    { viewModel.setSelectedCategory(it) },
+                                                    viewModel,
+                                                    scope
+                                                )
+                                            }
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                                contentDescription = "Wróć"
+                                            )
+                                        }
+                                    }
+                                },
+                                actions = {
+                                    if (selectedCategory != null) {
+                                        IconButton(onClick = { scope.launch { drawerState.apply { if (isClosed) open() else close() } } }) {
+                                            Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                                        }
+                                    }
+                                },
+                                scrollBehavior = scrollBehavior
+                            )
+                            )
+                }
+
             },
             bottomBar = {
-                BottomAppBar(containerColor = BottomAppBarDefaults.containerColor, contentPadding = PaddingValues(16.dp,0.dp), scrollBehavior = scrollBehaviorBottom) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly.also { Arrangement.Center }, verticalAlignment = Alignment.CenterVertically){
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentPadding = PaddingValues(16.dp, 0.dp),
+                    scrollBehavior = scrollBehaviorBottom
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly.also { Arrangement.Center },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         val dark = isSystemInDarkTheme()
                         val color = if (dark) Color.White else Color.Black
                         Icon(
                             painterResource(R.drawable.rounded_category_24),
                             modifier = Modifier.size(36.dp),
                             contentDescription = "Kategorie drinków",
-                            tint=color)
-                        if (selectedCategory != null){
-                            Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
+                            tint = color
+                        )
+                        if (selectedCategory != null) {
+                            Icon(
+                                Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                contentDescription = ">",
+                                tint = color
+                            )
                             Icon(
                                 painterResource(R.drawable.baseline_format_list_bulleted_24),
                                 modifier = Modifier.size(36.dp),
                                 contentDescription = "Lista drinków",
                                 tint = color
                             )
-                            if (isDetailVisible){
-                                Icon(Icons.AutoMirrored.Default.KeyboardArrowRight, contentDescription = ">",tint=color)
+                            if (isDetailVisible) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                    contentDescription = ">",
+                                    tint = color
+                                )
                                 Icon(
                                     painterResource(R.drawable.baseline_local_bar_24),
                                     modifier = Modifier.size(36.dp),
@@ -283,33 +350,37 @@ fun BartenderAppBody(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().padding(paddingValues).pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
-        detectHorizontalDragGestures(
-            onHorizontalDrag = { _, dragAmount ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .pointerInput(scaffoldNavigator.currentDestination, selectedCategory) {
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { _, dragAmount ->
 
-                if (dragAmount > 50) {
-                    handleBack(
-                        scaffoldNavigator,
-                        selectedCategory,
-                        changeCategory,
-                        viewModel,
-                        scope
-                    )
-                } else if (dragAmount < -50) {
-                    viewModel.popCategoryBack()?.let {
-                        changeCategory(it)
-                    } ?: viewModel.popBack()?.let {
-                        scope.launch {
-                            scaffoldNavigator.navigateTo(
-                                ListDetailPaneScaffoldRole.Detail,
-                                it
+                        if (dragAmount > 50) {
+                            handleBack(
+                                scaffoldNavigator,
+                                selectedCategory,
+                                changeCategory,
+                                viewModel,
+                                scope
                             )
+                        } else if (dragAmount < -50) {
+                            viewModel.popCategoryBack()?.let {
+                                changeCategory(it)
+                            } ?: viewModel.popBack()?.let {
+                                scope.launch {
+                                    scaffoldNavigator.navigateTo(
+                                        ListDetailPaneScaffoldRole.Detail,
+                                        it
+                                    )
+                                }
+                            }
                         }
                     }
-                }
-            }
-        )
-    }) {
+                )
+            }) {
 
         if (selectedCategory == null) {
 
