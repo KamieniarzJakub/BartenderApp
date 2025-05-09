@@ -177,6 +177,7 @@ fun BartenderApp(viewModel: MainViewModel) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val isDetailVisible by rememberUpdatedState(newValue = scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail)
     var imageFullScreen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
         ModalDrawerSheet() {
@@ -211,7 +212,6 @@ fun BartenderApp(viewModel: MainViewModel) {
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
             topBar = {
-                val context = LocalContext.current
                 when {
                     isDetailVisible -> (
                             Box {
@@ -421,13 +421,20 @@ fun BartenderApp(viewModel: MainViewModel) {
     if (imageFullScreen) {
         var zoomed by remember { mutableStateOf(false) }
         var zoomOffset by remember { mutableStateOf(Offset.Zero) }
-        val painter = painterResource(R.drawable.drink)
+        val imageUrl = scaffoldNavigator.currentDestination?.contentKey?.imageUrl
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Scrim({ imageFullScreen = false }, Modifier.fillMaxSize())
-            Image(
-                painter,
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
                 "Drink",
-                alignment = Alignment.Center,
+                placeholder = painterResource(R.drawable.icon),
+                onError = {
+                    Toast.makeText(context, "Błąd ładowania zdjęcia", Toast.LENGTH_SHORT).show();
+                    Log.e("DrinkDetails", "Błąd ładowania zdjęcia ${imageUrl}", it.result.throwable)
+                },
                 modifier = Modifier
                     .padding(16.dp)
                     .pointerInput(Unit) {
