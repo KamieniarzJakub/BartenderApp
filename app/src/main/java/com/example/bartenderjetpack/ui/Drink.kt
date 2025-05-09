@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.FloatingActionButton
@@ -175,11 +174,12 @@ fun Timer() {
                 .padding(top = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = { isRunning = true }) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Start")
-            }
-            IconButton(onClick = { isRunning = false }) {
-                Icon(Icons.Default.Clear, contentDescription = "Stop")
+            IconButton(onClick = { isRunning = !isRunning }) {
+                if (isRunning) {
+                    Icon(painterResource(R.drawable.baseline_pause_24), contentDescription = "Stop")
+                } else {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Start")
+                }
             }
             IconButton(onClick = {
                 isRunning = false
