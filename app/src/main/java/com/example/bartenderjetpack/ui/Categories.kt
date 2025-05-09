@@ -1,28 +1,23 @@
 package com.example.bartenderjetpack.ui
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.res.Configuration
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -35,9 +30,14 @@ import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.example.bartenderjetpack.R
 import com.example.bartenderjetpack.drinkCategories
 import com.example.bartenderjetpack.model.Drink
@@ -53,11 +53,12 @@ fun GetIconResourceForCategory(id: Int): Int {
 
 @Composable
 fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
+    val context = LocalContext.current;
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        itemsIndexed(category.drinks) { index,drink ->
+        itemsIndexed(category.drinks) { index, drink ->
             ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -74,10 +75,24 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
                 headlineContent = { Text(drink.name) },
                 supportingContent = { Text(drink.ingredients) },
                 leadingContent = {
-                    Image(
-                        painter = painterResource(id = GetIconResourceForCategory(index)),
-                        contentDescription = "Obrazek koktajlu",
-                        modifier = Modifier.size(40.dp)
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(drink.imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        "Drink",
+                        placeholder = painterResource(R.drawable.icon),
+                        onError = {
+                            Toast.makeText(context, "Błąd ładowania zdjęcia", Toast.LENGTH_SHORT)
+                                .show();
+                            Log.e(
+                                "DrinkDetails",
+                                "Błąd ładowania zdjęcia ${drink.imageUrl}",
+                                it.result.throwable
+                            )
+                        },
+                        modifier = Modifier.size(40.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
             )
@@ -87,8 +102,8 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
 
 
 @Composable
-fun CategoryItems(modifier: Modifier, onCategoryClick: (DrinkCategory) -> Unit){
-    drinkCategories.forEachIndexed{ index,category ->
+fun CategoryItems(modifier: Modifier, onCategoryClick: (DrinkCategory) -> Unit) {
+    drinkCategories.forEachIndexed { index, category ->
         Card(
             modifier = modifier.clickable { onCategoryClick(category) },
             elevation = CardDefaults.cardElevation(8.dp)
@@ -96,11 +111,14 @@ fun CategoryItems(modifier: Modifier, onCategoryClick: (DrinkCategory) -> Unit){
             Row(
                 modifier = Modifier.padding(16.dp),
                 horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically) {
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Image(
                     painter = painterResource(id = GetIconResourceForCategory(index)),
                     contentDescription = category.name,
-                    modifier = Modifier.weight(0.5f).fillMaxSize()
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .fillMaxSize()
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 Column(
@@ -124,7 +142,7 @@ fun CategoryItems(modifier: Modifier, onCategoryClick: (DrinkCategory) -> Unit){
     }
 }
 
-enum class LayoutArrangement{
+enum class LayoutArrangement {
     Column, Row
 }
 
@@ -137,7 +155,7 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
     val isMedium = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Medium
-    val layoutArrangement = when{
+    val layoutArrangement = when {
         isCompact -> LayoutArrangement.Column
         isPortrait && isMedium -> LayoutArrangement.Column
         else -> LayoutArrangement.Row
@@ -147,21 +165,25 @@ fun CategoryCards(onCategoryClick: (DrinkCategory) -> Unit) {
     when (layoutArrangement) {
         LayoutArrangement.Column -> {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CategoryItems(Modifier.weight(1f),onCategoryClick)
+                CategoryItems(Modifier.weight(1f), onCategoryClick)
             }
         }
 
         LayoutArrangement.Row -> {
             Row(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CategoryItems(Modifier.weight(1f),onCategoryClick)
+                CategoryItems(Modifier.weight(1f), onCategoryClick)
             }
         }
     }
