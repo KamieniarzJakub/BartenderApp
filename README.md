@@ -1,5 +1,7 @@
 TODO:
 
+Lab 5, 6, 7:
+
 Cel: Jest to kontynuacja aplikacji z poprzednich zajęć i zmiana jej strony wizualnej oraz niektórych mechanizmów nawigacyjnych. Ekran listy ma się składać z co najmniej trzech kart. Pierwsza karta ma być kartą główną aplikacji, a pozostałe mają być kartami kategorii. Karta główna będzie informować o  przeznaczeniu aplikacji, a karty kategorii mogą np. dzielić koktajle według dowolnego kryterium np. short drinki long drinki, koktajle bezalkoholowe i alkoholowe lub jakiegokolwiek inny sensowny podział, który przyjdzie Wam do głowy.
 
 Wymagania minimalne:
@@ -24,6 +26,24 @@ Elementy dodatkowe:
 7. ~~Opracowanie własnych ikon związanych z akcją.~~
 8. ~~Opracowanie własnej ikony dla aplikacji~~
 
+
+Lab 8:
+Zadanie - Animacje
+
+Cel: Jest to kontynuacja aplikacji z poprzednich zajęć i dodanie do niej krótkiej animacji, która będzie się pojawiać w trakcie uruchamiania aplikacji. Animacja powinna być związana tematycznie z realizowanym zadaniem.
+
+Wymagania minimalne
+
+1. Animacja ma się opierać na systemie animacji właściwości, czyli korzystać z obiektu ObjectAnimator
+
+Elementy dodatkowe:
+
+1. Kod w Kotlinie,
+2. Uruchomienie kilku animatorów równocześnie
+3. Animacja reagująca na działania wybranego sensora lub sensorów
+4. Ruchy obiektów zgodne z regułami biblioteki wzornictwa Material Design
+5. Ruchy obiektów zgodne z prawami fizyki
+6. Inne wg uznania
 
 TODO:
 - podświetlanie aktywnego itema na widoku horyzontalnym
