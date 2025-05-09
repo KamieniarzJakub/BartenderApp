@@ -3,6 +3,8 @@ package com.example.bartenderjetpack
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -84,6 +86,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.core.layout.WindowWidthSizeClass
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.example.bartenderjetpack.model.Drink
 import com.example.bartenderjetpack.model.DrinkCategory
 import com.example.bartenderjetpack.model.MainViewModel
@@ -206,16 +211,24 @@ fun BartenderApp(viewModel: MainViewModel) {
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
 
             topBar = {
+                val context = LocalContext.current
                 when {
                     isDetailVisible -> (
                             Box {
-                                Image(
-                                    painterResource(id = R.drawable.drink),
+                                val imageUrl = scaffoldNavigator.currentDestination?.contentKey?.imageUrl
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(imageUrl)
+                                        .crossfade(true)
+                                        .build(),
                                     "Drink",
+                                    placeholder = painterResource(R.drawable.icon),
+                                    onError = {
+                                        Toast.makeText(context, "Błąd ładowania zdjęcia", Toast.LENGTH_SHORT).show();
+                                        Log.e("DrinkDetails", "Błąd ładowania zdjęcia ${imageUrl}", it.result.throwable)
+                                    },
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-//                                        .blur(16.dp)
-                                        .matchParentSize()
+                                    modifier = Modifier.matchParentSize()
                                 )
                                 LargeTopAppBar(
                                     expandedHeight = 300.dp,
