@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ListItem
@@ -42,13 +43,21 @@ import com.example.bartenderjetpack.drinkCategories
 import com.example.bartenderjetpack.model.Drink
 import com.example.bartenderjetpack.model.DrinkCategory
 
+fun GetIconResourceForCategory(id: Int): Int {
+    return when {
+        id == 0 -> R.drawable.baseline_local_bar_24
+        id == 1 -> R.drawable.baseline_no_drinks_24
+        else -> R.drawable.icon
+    }
+}
+
 @Composable
 fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(category.drinks) { drink ->
+        itemsIndexed(category.drinks) { index,drink ->
             ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -66,7 +75,7 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
                 supportingContent = { Text(drink.ingredients) },
                 leadingContent = {
                     Image(
-                        painter = painterResource(id = R.drawable.icon),
+                        painter = painterResource(id = GetIconResourceForCategory(index)),
                         contentDescription = "Obrazek koktajlu",
                         modifier = Modifier.size(40.dp)
                     )
@@ -79,7 +88,7 @@ fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
 
 @Composable
 fun CategoryItems(modifier: Modifier, onCategoryClick: (DrinkCategory) -> Unit){
-    drinkCategories.forEach{ category ->
+    drinkCategories.forEachIndexed{ index,category ->
         Card(
             modifier = modifier.clickable { onCategoryClick(category) },
             elevation = CardDefaults.cardElevation(8.dp)
@@ -89,7 +98,7 @@ fun CategoryItems(modifier: Modifier, onCategoryClick: (DrinkCategory) -> Unit){
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = R.drawable.icon),
+                    painter = painterResource(id = GetIconResourceForCategory(index)),
                     contentDescription = category.name,
                     modifier = Modifier.weight(0.5f).fillMaxSize()
                 )
