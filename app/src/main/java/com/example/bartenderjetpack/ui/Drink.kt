@@ -170,8 +170,8 @@ fun Timer() {
         // Przycisk Start / Stop / Reset
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
+                .fillMaxWidth(),
+//                .padding(top = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             IconButton(onClick = { isRunning = !isRunning }) {
