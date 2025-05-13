@@ -44,6 +44,36 @@ val drinkCategories = listOf(
                 "Zmiksuj wszystkie składniki z lodem i podawaj w wysokiej szklance.",
                 "https://images.unsplash.com/photo-1517448931760-9bf4414148c5"
             ),
+            Drink(
+                "Lemoniada",
+                "cytryny, woda, cukier, mięta",
+                "Wycisnąć sok z cytryn, dodać wodę i cukier do smaku. Wymieszać, a na koniec wrzucić kilka listków mięty.",
+                "https://images.unsplash.com/photo-1561043433-aaf687c4cf4e"
+            ),
+            Drink(
+                "Herbata mrożona",
+                "herbata, cytryna, cukier, kostki lodu",
+                "Zaparzyć mocną herbatę, ostudzić, dodać cukier i sok z cytryny. Przelać do szklanki z lodem.",
+                "https://images.unsplash.com/photo-1627308595229-7830a5c91f9f"
+            ),
+            Drink(
+                "Koktajl bananowy",
+                "banany, mleko, miód",
+                "Zmiksować banany z mlekiem i odrobiną miodu. Podawać schłodzone.",
+                "https://images.unsplash.com/photo-1580910051074-d5ef6f6657d1"
+            ),
+            Drink(
+                "Kompot z jabłek",
+                "jabłka, cukier, woda, cynamon",
+                "Pokroić jabłka i gotować z cukrem, wodą i szczyptą cynamonu. Po ostudzeniu podawać na zimno.",
+                "https://images.unsplash.com/photo-1611048265845-740b3b264d3c"
+            ),
+            Drink(
+                "Smoothie truskawkowe",
+                "truskawki, jogurt naturalny, miód",
+                "Zmiksować truskawki z jogurtem i miodem. Przelać do szklanki i udekorować świeżą truskawką.",
+                "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642"
+            )
         )
     )
 )
