@@ -50,3 +50,7 @@ TODO:
 - testy tabletu
 - wyszukiwanie
 - swipe z prawej na lewą na ostatnim ekranie szczegółów daje ??? w top app bar
+
+Bugi do naprawienia:
+- na telefonie, widok horyzontalny, scrollowanie się buguje, trzeba przeciągnąć w odpowiednim miejscu, lista drinków z danej kategorii (widać tylko 2 pierwsze) -> odpalenie aplikacji na widoku pionowym, wybór kategorii, zmiana orientacji, wybór drinka = crash
+- na widoku pionowym, jak jest więcej drinków, to wgl nie działa scroll
