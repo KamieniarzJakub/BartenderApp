@@ -111,7 +111,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             BartenderJetpackTheme {
                 val viewModel: MainViewModel = viewModel()
-//                RotatingImageScreen()
                 BartenderApp(viewModel = viewModel)
             }
         }
@@ -186,8 +185,8 @@ fun BartenderApp(viewModel: MainViewModel) {
     val context = LocalContext.current
     val rotationDegrees by rememberSensorRotation(
         sensorType = Sensor.TYPE_ROTATION_VECTOR,
-        maxTiltDegrees = 25f, // Tilting phone up to 25 degrees
-        maxImageRotationDegrees = 6f // results in image rotation up to 6 degrees
+        maxTiltDegrees = 70f, // Tilting phone up to 25 degrees
+        maxImageRotationDegrees = 70f // results in image rotation up to 6 degrees
     )
 
 
@@ -462,7 +461,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                         scaleY = if (zoomed) 2f else 1f
                         translationX = zoomOffset.x
                         translationY = zoomOffset.y
-                        rotationZ = rotationDegrees
+                        rotationZ = -rotationDegrees
                     },
                 contentScale = ContentScale.Fit
             )
