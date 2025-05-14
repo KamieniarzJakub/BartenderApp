@@ -48,31 +48,31 @@ val drinkCategories = listOf(
                 "Lemoniada",
                 "cytryny, woda, cukier, mięta",
                 "Wycisnąć sok z cytryn, dodać wodę i cukier do smaku. Wymieszać, a na koniec wrzucić kilka listków mięty.",
-                "https://images.unsplash.com/photo-1561043433-aaf687c4cf4e"
+                "https://images.unsplash.com/photo-1575596510825-f748919a2bf7"
             ),
             Drink(
                 "Herbata mrożona",
                 "herbata, cytryna, cukier, kostki lodu",
                 "Zaparzyć mocną herbatę, ostudzić, dodać cukier i sok z cytryny. Przelać do szklanki z lodem.",
-                "https://images.unsplash.com/photo-1627308595229-7830a5c91f9f"
+                "https://images.unsplash.com/photo-1556679343-c7306c1976bc"
             ),
             Drink(
                 "Koktajl bananowy",
                 "banany, mleko, miód",
                 "Zmiksować banany z mlekiem i odrobiną miodu. Podawać schłodzone.",
-                "https://images.unsplash.com/photo-1580910051074-d5ef6f6657d1"
+                "https://images.unsplash.com/photo-1707219811295-0f283760668b"
             ),
             Drink(
                 "Kompot z jabłek",
                 "jabłka, cukier, woda, cynamon",
                 "Pokroić jabłka i gotować z cukrem, wodą i szczyptą cynamonu. Po ostudzeniu podawać na zimno.",
-                "https://images.unsplash.com/photo-1611048265845-740b3b264d3c"
+                "https://images.unsplash.com/photo-1534336810865-0beae4c81278"
             ),
             Drink(
                 "Smoothie truskawkowe",
                 "truskawki, jogurt naturalny, miód",
                 "Zmiksować truskawki z jogurtem i miodem. Przelać do szklanki i udekorować świeżą truskawką.",
-                "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642"
+                "https://images.unsplash.com/photo-1579954115545-a95591f28bfc"
             )
         )
     )
