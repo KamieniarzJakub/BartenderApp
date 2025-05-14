@@ -21,12 +21,10 @@ fun rememberSensorRotation(
     val sensor = remember(sensorType) { sensorManager.getDefaultSensor(sensorType) }
 
     // State to hold the calculated rotation angle
-    val rotationDegrees = remember { mutableFloatStateOf(0f) }
+    val targetRotationDegreesState = remember { mutableFloatStateOf(0f) }
 
-    // If the sensor is not available, return a state with 0 rotation
     if (sensor == null) {
-        // Consider adding a log warning here in a real app
-        return rotationDegrees
+        return targetRotationDegreesState
     }
 
     // Effect to manage sensor listener registration and unregistration
@@ -62,7 +60,7 @@ fun rememberSensorRotation(
                         Sensor.TYPE_ACCELEROMETER -> {
                             // Alternative: Estimate tilt from accelerometer data (less stable/accurate than Rotation Vector)
                             val accelX = event.values[0]
-                            val accelY = event.values[1]
+//                            val accelY = event.values[1]
                             val accelZ = event.values[2]
 
                             // Estimate roll (rotation around Y) from X and Z acceleration
@@ -79,13 +77,11 @@ fun rememberSensorRotation(
                         else -> 0f // Should not happen
                     }
                     // Update the state on the main thread
-                    rotationDegrees.floatValue = currentRotation
+                    targetRotationDegreesState.floatValue = currentRotation
                 }
             }
 
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // Not needed for this example
-            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
         // Register the listener
@@ -99,5 +95,5 @@ fun rememberSensorRotation(
 
     }
 
-    return rotationDegrees
+    return targetRotationDegreesState
 }

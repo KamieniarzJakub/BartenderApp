@@ -10,6 +10,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -183,10 +185,20 @@ fun BartenderApp(viewModel: MainViewModel) {
     val isDetailVisible by rememberUpdatedState(newValue = scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail)
     var imageFullScreen by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val rotationDegrees by rememberSensorRotation(
+    val targetRotationDegrees by rememberSensorRotation(
         sensorType = Sensor.TYPE_ROTATION_VECTOR,
         maxTiltDegrees = 70f, // Tilting phone up to 25 degrees
         maxImageRotationDegrees = 70f // results in image rotation up to 6 degrees
+    )
+    val animatedRotationDegrees by animateFloatAsState(
+        targetValue = targetRotationDegrees,
+        animationSpec = spring( // Use a spring animation for a natural, physics-based feel
+            dampingRatio = 0.6f, // How bouncy the spring is (lower = more bouncy)
+            stiffness = 150f // How stiff the spring is (lower = slower animation)
+            // Adjust these values to get the desired smoothness and responsiveness
+        ),
+        // animationSpec = tween(durationMillis = 300), // Alternative: fixed duration animation
+        label = "imageRotationAnimation" // Optional label for tooling/debugging
     )
 
 
@@ -461,7 +473,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                         scaleY = if (zoomed) 2f else 1f
                         translationX = zoomOffset.x
                         translationY = zoomOffset.y
-                        rotationZ = -rotationDegrees
+                        rotationZ = -animatedRotationDegrees
                     },
                 contentScale = ContentScale.Fit
             )
