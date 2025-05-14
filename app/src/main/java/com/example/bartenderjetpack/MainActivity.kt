@@ -194,7 +194,7 @@ fun BartenderApp(viewModel: MainViewModel) {
         targetValue = targetRotationDegrees,
         animationSpec = spring( // Use a spring animation for a natural, physics-based feel
             dampingRatio = 0.6f, // How bouncy the spring is (lower = more bouncy)
-            stiffness = 150f // How stiff the spring is (lower = slower animation)
+            stiffness = 50f // How stiff the spring is (lower = slower animation)
             // Adjust these values to get the desired smoothness and responsiveness
         ),
         // animationSpec = tween(durationMillis = 300), // Alternative: fixed duration animation
