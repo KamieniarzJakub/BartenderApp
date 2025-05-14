@@ -98,6 +98,7 @@ import com.example.bartenderjetpack.model.MainViewModel
 import com.example.bartenderjetpack.ui.CategoryCards
 import com.example.bartenderjetpack.ui.CategoryDetailView
 import com.example.bartenderjetpack.ui.DrinkDetails
+import com.example.bartenderjetpack.ui.RotatingImageScreen
 import com.example.bartenderjetpack.ui.handleBack
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
@@ -109,7 +110,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             BartenderJetpackTheme {
                 val viewModel: MainViewModel = viewModel()
-                BartenderApp(viewModel = viewModel)
+                RotatingImageScreen()
+//                BartenderApp(viewModel = viewModel)
             }
         }
     }
