@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -45,6 +46,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -210,8 +212,7 @@ fun BartenderApp(viewModel: MainViewModel) {
     }) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeContent,
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-
+            modifier = when {isDetailVisible -> Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else -> Modifier},
             topBar = {
                 when {
                     isDetailVisible -> (
@@ -442,8 +443,8 @@ fun BartenderApp(viewModel: MainViewModel) {
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onDoubleTap = { tapOffset ->
-                                zoomOffset = if (zoomed) Offset.Zero else
-                                    calculateOffset(tapOffset, size)
+                                zoomOffset = if (zoomed) Offset.Zero else Offset.Zero
+//                                    calculateOffset(tapOffset, size)
                                 zoomed = !zoomed
                             }
                         )
@@ -500,6 +501,7 @@ fun BartenderAppBody(
                     onHorizontalDrag = { _, dragAmount ->
 
                         if (dragAmount > 50) {
+                            Log.d("CustomNavigation","Drag > 50")
                             handleBack(
                                 scaffoldNavigator,
                                 selectedCategory,
@@ -508,9 +510,11 @@ fun BartenderAppBody(
                                 scope
                             )
                         } else if (dragAmount < -50) {
+                            Log.d("CustomNavigation","Drag < -50")
                             viewModel.popCategoryBack()?.let {
                                 changeCategory(it)
                             } ?: viewModel.popBack()?.let {
+
                                 scope.launch {
                                     scaffoldNavigator.navigateTo(
                                         ListDetailPaneScaffoldRole.Detail,
