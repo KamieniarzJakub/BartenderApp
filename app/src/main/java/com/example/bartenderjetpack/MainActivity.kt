@@ -10,8 +10,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +36,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -49,7 +55,6 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -83,6 +88,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -105,6 +111,7 @@ import com.example.bartenderjetpack.ui.handleBack
 import com.example.bartenderjetpack.ui.rememberSensorRotation
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -232,12 +239,16 @@ fun BartenderApp(viewModel: MainViewModel) {
     }) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeContent,
-            modifier = when {isDetailVisible -> Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else -> Modifier},
+            modifier = when {
+                isDetailVisible -> Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+                else -> Modifier
+            },
             topBar = {
                 when {
                     isDetailVisible -> (
                             Box {
-                                val imageUrl = scaffoldNavigator.currentDestination?.contentKey?.imageUrl
+                                val imageUrl =
+                                    scaffoldNavigator.currentDestination?.contentKey?.imageUrl
                                 AsyncImage(
                                     model = ImageRequest.Builder(LocalContext.current)
                                         .data(imageUrl)
@@ -246,8 +257,16 @@ fun BartenderApp(viewModel: MainViewModel) {
                                     "Drink",
                                     placeholder = painterResource(R.drawable.icon),
                                     onError = {
-                                        Toast.makeText(context, "Błąd ładowania zdjęcia", Toast.LENGTH_SHORT).show();
-                                        Log.e("DrinkDetails", "Błąd ładowania zdjęcia ${imageUrl}", it.result.throwable)
+                                        Toast.makeText(
+                                            context,
+                                            "Błąd ładowania zdjęcia",
+                                            Toast.LENGTH_SHORT
+                                        ).show();
+                                        Log.e(
+                                            "DrinkDetails",
+                                            "Błąd ładowania zdjęcia ${imageUrl}",
+                                            it.result.throwable
+                                        )
                                     },
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.matchParentSize()
@@ -437,7 +456,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                 { viewModel.setSelectedCategory(it) },
                 viewModel
             )
-            Spacer(modifier = Modifier.padding(bottom=BottomAppBarDefaults.ContentPadding.calculateBottomPadding()))
+            Spacer(modifier = Modifier.padding(bottom = BottomAppBarDefaults.ContentPadding.calculateBottomPadding()))
         }
     }
 
@@ -445,39 +464,70 @@ fun BartenderApp(viewModel: MainViewModel) {
         var zoomed by remember { mutableStateOf(false) }
         var zoomOffset by remember { mutableStateOf(Offset.Zero) }
         val imageUrl = scaffoldNavigator.currentDestination?.contentKey?.imageUrl
+        val droplets = painterResource(R.drawable.water_drop)
+        val density = LocalDensity.current
+        val showDroplets by rememberUpdatedState(newValue = abs(targetRotationDegrees - animatedRotationDegrees) > 20f)
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Scrim({ imageFullScreen = false }, Modifier.fillMaxSize())
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUrl)
-                    .crossfade(true)
-                    .build(),
-                "Drink",
-                placeholder = painterResource(R.drawable.icon),
-                onError = {
-                    Toast.makeText(context, "Błąd ładowania zdjęcia", Toast.LENGTH_SHORT).show();
-                    Log.e("DrinkDetails", "Błąd ładowania zdjęcia ${imageUrl}", it.result.throwable)
-                },
-                modifier = Modifier
-                    .padding(16.dp)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = { tapOffset ->
-                                zoomOffset = if (zoomed) Offset.Zero else calculateOffset(tapOffset, size)
-                                zoomed = !zoomed
-                            }
+            AnimatedVisibility(
+                visible = imageFullScreen,
+                enter = slideInVertically {
+                    // Slide in from 40 dp from the top.
+                    with(density) { -40.dp.roundToPx() }
+                } + expandVertically(
+                    // Expand from the top.
+                    expandFrom = Alignment.Top
+                ) + fadeIn(
+                    // Fade in with the initial alpha of 0.3f.
+                    initialAlpha = 0.3f
+                ),
+                exit = slideOutVertically() + shrinkVertically() + fadeOut()
+            ) {
+                Scrim({ imageFullScreen = false }, Modifier.fillMaxSize())
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    "Drink",
+                    placeholder = painterResource(R.drawable.icon),
+                    onError = {
+                        Toast.makeText(context, "Błąd ładowania zdjęcia", Toast.LENGTH_SHORT)
+                            .show();
+                        Log.e(
+                            "DrinkDetails",
+                            "Błąd ładowania zdjęcia ${imageUrl}",
+                            it.result.throwable
                         )
-                    }
-                    .graphicsLayer {
-                        scaleX = if (zoomed) 2f else 1f
-                        scaleY = if (zoomed) 2f else 1f
-                        translationX = zoomOffset.x
-                        translationY = zoomOffset.y
-                        rotationZ = -animatedRotationDegrees
                     },
-                contentScale = ContentScale.Fit
-            )
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = { tapOffset ->
+                                    zoomOffset =
+                                        if (zoomed) Offset.Zero else calculateOffset(
+                                            tapOffset,
+                                            size
+                                        )
+                                    zoomed = !zoomed
+                                }
+                            )
+                        }
+                        .graphicsLayer {
+                            scaleX = if (zoomed) 2f else 1f
+                            scaleY = if (zoomed) 2f else 1f
+                            translationX = zoomOffset.x
+                            translationY = zoomOffset.y
+                            rotationZ = -animatedRotationDegrees
+                        },
+                    contentScale = ContentScale.Fit
+                )
+            }
+            AnimatedVisibility(showDroplets) {
+                Image(droplets,"Water droplets")
+            }
         }
+
     }
 }
 
@@ -521,7 +571,7 @@ fun BartenderAppBody(
                     onHorizontalDrag = { _, dragAmount ->
 
                         if (dragAmount > 50) {
-                            Log.d("CustomNavigation","Drag > 50")
+                            Log.d("CustomNavigation", "Drag > 50")
                             handleBack(
                                 scaffoldNavigator,
                                 selectedCategory,
@@ -530,7 +580,7 @@ fun BartenderAppBody(
                                 scope
                             )
                         } else if (dragAmount < -50) {
-                            Log.d("CustomNavigation","Drag < -50")
+                            Log.d("CustomNavigation", "Drag < -50")
                             viewModel.popCategoryBack()?.let {
                                 changeCategory(it)
                             } ?: viewModel.popBack()?.let {
