@@ -61,6 +61,7 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import androidx.compose.material3.rememberBottomAppBarState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -183,10 +184,29 @@ fun BartenderApp(viewModel: MainViewModel) {
     val context = LocalContext.current
 
     ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
-        ModalDrawerSheet() {
+        ModalDrawerSheet {
+            var searchQuery by remember { mutableStateOf("") }
+
             Text("Kategorie drinków", modifier = Modifier.padding(16.dp))
+
+            // Wyszukiwarka
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Szukaj kategorii") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                singleLine = true
+            )
+
             HorizontalDivider()
-            drinkCategories.forEach { category ->
+
+            val filteredCategories = drinkCategories.filter {
+                it.name.contains(searchQuery, ignoreCase = true)
+            }
+
+            filteredCategories.forEach { category ->
                 NavigationDrawerItem(
                     label = { Text(text = category.name) },
                     selected = category == selectedCategory,
@@ -209,6 +229,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                 )
             }
         }
+
     }) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeContent,
