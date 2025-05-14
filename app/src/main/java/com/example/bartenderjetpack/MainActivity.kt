@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -105,6 +106,8 @@ import com.example.bartenderjetpack.ui.LayoutArrangement.Column
 import com.example.bartenderjetpack.ui.handleBack
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -189,78 +192,87 @@ fun BartenderApp(viewModel: MainViewModel) {
     ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
         ModalDrawerSheet {
             var searchQuery by remember { mutableStateOf("") }
+            val scrollState = rememberScrollState()
+            val keyboardController = LocalSoftwareKeyboardController.current
 
-            Text("Kategorie drinków", modifier = Modifier.padding(16.dp))
+            Column(modifier = Modifier.verticalScroll(scrollState)) {
+                Text("Kategorie drinków", modifier = Modifier.padding(16.dp))
 
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Szukaj") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                singleLine = true
-            )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Szukaj") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    singleLine = true
+                )
 
-            HorizontalDivider()
+                HorizontalDivider()
 
-            val filteredCategories = drinkCategories.filter {
-                it.name.contains(searchQuery, ignoreCase = true) ||
-                        it.drinks.any { drink -> drink.name.contains(searchQuery, ignoreCase = true) }
-            }
+                val filteredCategories = drinkCategories.filter {
+                    it.name.contains(searchQuery, ignoreCase = true) ||
+                            it.drinks.any { drink -> drink.name.contains(searchQuery, ignoreCase = true) }
+                }
 
-            filteredCategories.forEach { category ->
-                Column {
-                    NavigationDrawerItem(
-                        label = { Text(text = category.name) },
-                        selected = category == selectedCategory,
-                        onClick = {
-                            scope.launch {
-                                if (selectedCategory != category) {
-                                    viewModel.clearBackStacks()
-                                    viewModel.pushCategoryBack(category)
-                                    scaffoldNavigator.navigateTo(
-                                        ListDetailPaneScaffoldRole.List,
-                                        null
-                                    )
-                                    viewModel.setSelectedCategory(category)
-                                }
-                                drawerState.close()
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "Kategoria: ${category.name}"
-                            )
-                        },
-                    )
-                    category.drinks
-                        .filter { it.name.contains(searchQuery, ignoreCase = true) }
-                        .forEach { drink ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        scope.launch {
-                                            if (selectedCategory != category) {
-                                                viewModel.clearBackStacks()
-                                                viewModel.pushCategoryBack(category)
-                                                viewModel.setSelectedCategory(category)
-                                            }
-                                            viewModel.clearBackStacks()
-                                            scaffoldNavigator.navigateTo(
-                                                ListDetailPaneScaffoldRole.Detail,
-                                                drink
-                                            )
-                                            drawerState.close()
-                                        }
+                filteredCategories.forEach { category ->
+                    Column {
+                        NavigationDrawerItem(
+                            label = { Text(text = category.name) },
+                            selected = category == selectedCategory,
+                            onClick = {
+                                scope.launch {
+                                    if (selectedCategory != category) {
+                                        viewModel.clearBackStacks()
+                                        viewModel.pushCategoryBack(category)
+                                        scaffoldNavigator.navigateTo(
+                                            ListDetailPaneScaffoldRole.List,
+                                            null
+                                        )
+                                        viewModel.setSelectedCategory(category)
                                     }
-                                    .padding(start = 32.dp, top = 4.dp, bottom = 4.dp)
-                            ) {
-                                Text(drink.name)
+                                    keyboardController?.hide()
+                                    searchQuery = ""
+                                    drawerState.close()
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Kategoria: ${category.name}"
+                                )
+                            },
+                        )
+
+                        category.drinks
+                            .filter { it.name.contains(searchQuery, ignoreCase = true) }
+                            .forEach { drink ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            scope.launch {
+                                                if (selectedCategory != category) {
+                                                    viewModel.clearBackStacks()
+                                                    viewModel.pushCategoryBack(category)
+                                                    viewModel.setSelectedCategory(category)
+                                                }
+                                                viewModel.clearBackStacks()
+                                                scaffoldNavigator.navigateTo(
+                                                    ListDetailPaneScaffoldRole.Detail,
+                                                    drink
+                                                )
+                                                keyboardController?.hide()
+                                                searchQuery = ""
+                                                drawerState.close()
+                                            }
+                                        }
+                                        .padding(start = 32.dp, top = 4.dp, bottom = 4.dp)
+                                ) {
+                                    Text(drink.name)
+                                }
                             }
-                        }
+                    }
                 }
             }
         }
