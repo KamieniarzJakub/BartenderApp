@@ -23,6 +23,13 @@ class MainViewModel(
         _selectedCategory.value = category
     }
 
+    private val _selectedDrink = mutableStateOf<Drink?>(null)
+    val selectedDrink: State<Drink?> get() = _selectedDrink
+
+    fun setSelectedDrink(drink: Drink?){
+        _selectedDrink.value = drink
+    }
+
     fun pushBack(item: Drink) = _backStack.add(0, item)
     fun popBack(): Drink? = if (_backStack.isNotEmpty()) _backStack.removeAt(0) else null
     fun peekBack(): Drink? = _backStack.getOrNull(0)

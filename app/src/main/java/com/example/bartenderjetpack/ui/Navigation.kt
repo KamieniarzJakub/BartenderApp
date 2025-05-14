@@ -21,7 +21,10 @@ fun handleBack(
     return when {
         scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail -> {
             val contentKey = scaffoldNavigator.currentDestination?.contentKey
-            contentKey?.let { viewModel.pushBack(it) }
+            contentKey?.let {
+                viewModel.pushBack(it)
+                viewModel.setSelectedDrink(it)
+            }
 
             scope.launch {
                 scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilContentChange)

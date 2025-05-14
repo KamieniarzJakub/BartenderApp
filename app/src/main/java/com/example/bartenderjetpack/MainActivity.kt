@@ -196,7 +196,7 @@ fun BartenderApp(viewModel: MainViewModel) {
             val keyboardController = LocalSoftwareKeyboardController.current
 
             Column(modifier = Modifier.verticalScroll(scrollState)) {
-                Text("Kategorie drinków", modifier = Modifier.padding(16.dp))
+                Text("Wyszukiwarka drinków", modifier = Modifier.padding(16.dp))
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -230,6 +230,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                                             null
                                         )
                                         viewModel.setSelectedCategory(category)
+                                        viewModel.setSelectedDrink(null);
                                     }
                                     keyboardController?.hide()
                                     searchQuery = ""
@@ -257,6 +258,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                                                     viewModel.pushCategoryBack(category)
                                                     viewModel.setSelectedCategory(category)
                                                 }
+                                                viewModel.setSelectedDrink(drink)
                                                 viewModel.clearBackStacks()
                                                 scaffoldNavigator.navigateTo(
                                                     ListDetailPaneScaffoldRole.Detail,
@@ -309,18 +311,20 @@ fun BartenderApp(viewModel: MainViewModel) {
                                         scrolledContainerColor = MaterialTheme.colorScheme.primaryContainer
                                     ),
                                     title = {
-                                        Text(
-                                            viewModel.peekBack()?.name ?: "???",
-                                            maxLines = 3,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier
-                                                .background(
-                                                    MaterialTheme.colorScheme.primaryContainer,
-                                                    RoundedCornerShape(8.dp)
-                                                )
-                                                .padding(4.dp)
-                                        )
+                                        viewModel.selectedDrink.value?.let {
+                                            Text(
+                                                it.name,
+                                                maxLines = 3,
+                                                overflow = TextOverflow.Ellipsis,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier
+                                                    .background(
+                                                        MaterialTheme.colorScheme.primaryContainer,
+                                                        RoundedCornerShape(8.dp)
+                                                    )
+                                                    .padding(4.dp)
+                                            )
+                                        }
                                     },
                                     navigationIcon = {
                                         if (selectedCategory != null) {
@@ -624,6 +628,7 @@ fun BartenderAppBody(
                         scaffoldNavigator.currentDestination?.contentKey?.let {
                             DrinkDetails(it)
                             if (viewModel.backStack.isEmpty()) viewModel.pushBack(it)
+
                         }
                     }
                 }
