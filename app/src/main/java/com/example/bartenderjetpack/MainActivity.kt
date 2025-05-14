@@ -110,8 +110,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             BartenderJetpackTheme {
                 val viewModel: MainViewModel = viewModel()
-                RotatingImageScreen()
-//                BartenderApp(viewModel = viewModel)
+//                RotatingImageScreen()
+                BartenderApp(viewModel = viewModel)
             }
         }
     }

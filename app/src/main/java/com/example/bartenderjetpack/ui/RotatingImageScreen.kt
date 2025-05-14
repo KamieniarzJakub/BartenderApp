@@ -22,7 +22,7 @@ fun RotatingImageScreen() {
     val rotationDegrees by rememberSensorRotation(
         sensorType = Sensor.TYPE_ROTATION_VECTOR,
         maxTiltDegrees = 25f, // Tilting phone up to 25 degrees
-        maxImageRotationDegrees = 25f // results in image rotation up to 6 degrees
+        maxImageRotationDegrees = 6f // results in image rotation up to 6 degrees
     )
 
     // --- Alternative: Using Accelerometer (less ideal for orientation) ---

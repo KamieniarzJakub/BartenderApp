@@ -8,8 +8,6 @@ import android.hardware.SensorManager
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import kotlin.math.atan2
-import kotlin.math.sqrt
-import kotlin.math.pow // Not strictly needed with atan2 simplification
 
 @Composable
 fun rememberSensorRotation(
@@ -81,7 +79,7 @@ fun rememberSensorRotation(
                         else -> 0f // Should not happen
                     }
                     // Update the state on the main thread
-                    rotationDegrees.value = currentRotation
+                    rotationDegrees.floatValue = currentRotation
                 }
             }
 
