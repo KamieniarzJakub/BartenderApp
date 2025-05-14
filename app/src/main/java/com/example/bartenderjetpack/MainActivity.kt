@@ -2,6 +2,7 @@ package com.example.bartenderjetpack
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.hardware.Sensor
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -98,8 +99,8 @@ import com.example.bartenderjetpack.model.MainViewModel
 import com.example.bartenderjetpack.ui.CategoryCards
 import com.example.bartenderjetpack.ui.CategoryDetailView
 import com.example.bartenderjetpack.ui.DrinkDetails
-import com.example.bartenderjetpack.ui.RotatingImageScreen
 import com.example.bartenderjetpack.ui.handleBack
+import com.example.bartenderjetpack.ui.rememberSensorRotation
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
 import kotlinx.coroutines.launch
 
@@ -183,6 +184,12 @@ fun BartenderApp(viewModel: MainViewModel) {
     val isDetailVisible by rememberUpdatedState(newValue = scaffoldNavigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail)
     var imageFullScreen by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val rotationDegrees by rememberSensorRotation(
+        sensorType = Sensor.TYPE_ROTATION_VECTOR,
+        maxTiltDegrees = 25f, // Tilting phone up to 25 degrees
+        maxImageRotationDegrees = 6f // results in image rotation up to 6 degrees
+    )
+
 
     ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
         ModalDrawerSheet() {
@@ -455,6 +462,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                         scaleY = if (zoomed) 2f else 1f
                         translationX = zoomOffset.x
                         translationY = zoomOffset.y
+                        rotationZ = rotationDegrees
                     },
                 contentScale = ContentScale.Fit
             )
