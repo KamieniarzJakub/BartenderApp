@@ -11,13 +11,18 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOut
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -70,7 +75,10 @@ import androidx.compose.material3.rememberBottomAppBarState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,8 +86,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -94,8 +104,10 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.rotationMatrix
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.compose.AsyncImage
@@ -110,8 +122,13 @@ import com.example.bartenderjetpack.ui.DrinkDetails
 import com.example.bartenderjetpack.ui.handleBack
 import com.example.bartenderjetpack.ui.rememberSensorRotation
 import com.example.bartenderjetpack.ui.theme.BartenderJetpackTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.round
+import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -466,8 +483,12 @@ fun BartenderApp(viewModel: MainViewModel) {
         val imageUrl = scaffoldNavigator.currentDestination?.contentKey?.imageUrl
         val droplets = painterResource(R.drawable.water_drop)
         val density = LocalDensity.current
-        val showDroplets by rememberUpdatedState(newValue = abs(targetRotationDegrees - animatedRotationDegrees) > 20f)
+        var isDropletAnimationActive by remember { mutableStateOf(false) }
+        val rotationDifference = abs(targetRotationDegrees - animatedRotationDegrees)
+        val conditionMet = rotationDifference > 20f
+        var animatedDropletsTarget by remember { mutableDoubleStateOf(0.0) }
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Scrim({ imageFullScreen = false }, Modifier.fillMaxSize())
             AnimatedVisibility(
                 visible = imageFullScreen,
                 enter = slideInVertically {
@@ -482,7 +503,6 @@ fun BartenderApp(viewModel: MainViewModel) {
                 ),
                 exit = slideOutVertically() + shrinkVertically() + fadeOut()
             ) {
-                Scrim({ imageFullScreen = false }, Modifier.fillMaxSize())
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(imageUrl)
@@ -523,8 +543,52 @@ fun BartenderApp(viewModel: MainViewModel) {
                     contentScale = ContentScale.Fit
                 )
             }
-            AnimatedVisibility(showDroplets) {
-                Image(droplets,"Water droplets")
+            LaunchedEffect(targetRotationDegrees,animatedRotationDegrees) {
+                if (conditionMet && !isDropletAnimationActive) {
+                    isDropletAnimationActive = true
+                    scope.launch {
+                        try {
+                            Log.d("Droplet animation", "Started.")
+                            val targetAngle = targetRotationDegrees;
+                            animatedDropletsTarget = targetAngle.toDouble()
+                            delay(2000)
+                            Log.d("Droplet animation", "Finished.")
+                        } catch (e: CancellationException) {
+                            // This catches cancellation if the Composable leaves composition
+                            // (or the parent scope is cancelled).
+                            Log.d("Droplet animation", "Cancelled.")
+                            // Re-throw to ensure proper cancellation
+                            throw e
+                        } finally {
+                            // This runs when the coroutine finishes or is cancelled
+                            isDropletAnimationActive = false // Ensure flag is reset
+                        }
+                    }
+                }
+            }
+            AnimatedVisibility(
+                isDropletAnimationActive,
+                enter = fadeIn(animationSpec = tween(durationMillis = 200)),
+                exit =  slideOut(
+                    animationSpec = tween(durationMillis = 500),
+                    targetOffset = { it ->
+                        val offset =
+                        IntOffset(((it.width).toFloat() * cos(Math.toRadians(
+                            animatedDropletsTarget
+                    ))).toInt(),((it.height).toFloat() * sin(Math.toRadians(animatedDropletsTarget))).toInt())
+                        Log.d("TARGET_ANGLE",targetRotationDegrees.toString())
+                        Log.d("ANIMATED_ANGLE",animatedDropletsTarget.toString())
+                        Log.d("TARGET_ANGLE_OFFSET", offset.toString())
+                        offset
+                    })
+            ) {
+                Image(
+                    droplets,
+                    "Water droplets",
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.tint(Color.Blue),
+                    modifier = Modifier.size(50.dp)
+                )
             }
         }
 
