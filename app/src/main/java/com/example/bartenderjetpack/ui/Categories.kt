@@ -1,11 +1,17 @@
 package com.example.bartenderjetpack.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.OverscrollConfiguration
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.overscroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ListItem
@@ -28,6 +35,8 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -51,12 +60,14 @@ fun GetIconResourceForCategory(id: Int): Int {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CategoryDetailView(category: DrinkCategory, onDrinkClick: (Drink) -> Unit) {
-    val context = LocalContext.current;
+    val context = LocalContext.current
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        userScrollEnabled = true,
     ) {
         itemsIndexed(category.drinks) { index, drink ->
             ListItem(
