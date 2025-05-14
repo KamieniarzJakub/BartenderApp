@@ -443,8 +443,7 @@ fun BartenderApp(viewModel: MainViewModel) {
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onDoubleTap = { tapOffset ->
-                                zoomOffset = if (zoomed) Offset.Zero else Offset.Zero
-//                                    calculateOffset(tapOffset, size)
+                                zoomOffset = if (zoomed) Offset.Zero else calculateOffset(tapOffset, size)
                                 zoomed = !zoomed
                             }
                         )
